@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 const LandingPage = () => {
   return (
-    <div className="h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 overflow-hidden relative">
+    <div className="h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 overflow-hidden relative mt-[-64px] md:mt-0">
       <style jsx>{`
         .float-animation {
           animation: float 4s ease-in-out infinite;
