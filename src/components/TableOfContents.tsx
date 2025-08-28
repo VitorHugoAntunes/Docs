@@ -99,51 +99,49 @@ export default function ImprovedTableOfContents({ items }: TableOfContentsProps)
   if (normalizedItems.length === 0) return null
 
   return (
-    <div className="py-6">
-      <div className="sticky top-6">
-        <div className="flex items-center space-x-2 mb-4">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-            Nesta página
-          </h3>
-        </div>
-
-        <nav>
-          <ul className="space-y-2 text-sm">
-            {normalizedItems.map((item, index) => (
-              <li key={`${item.id}-${index}`}>
-                <button
-                  onClick={() => scrollToHeading(item.id)}
-                  className={`cursor-pointer block w-full text-left transition-colors ${activeId === item.id
-                    ? 'text-blue-700'
-                    : 'text-gray-500 hover:opacity-80 hover:text-blue-600'
-                    }`}
-                  style={{
-                    paddingLeft: `${(item.level - 1) * 12}px`,
-                  }}
-                >
-                  {item.title}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-6 p-3 bg-gray-100 rounded text-xs">
-            <div className="font-medium mb-2">Debug Info:</div>
-            <div>Active ID: <span className="font-mono">{activeId || 'none'}</span></div>
-            <div>Total items: {normalizedItems.length}</div>
-            <div className="mt-2">
-              <div className="font-medium">Generated IDs:</div>
-              {normalizedItems.map((item, index) => (
-                <div key={item.id + index} className="font-mono text-xs">
-                  {item.id} (Level {item.level}): {item.title}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+    <div className="">
+      <div className="flex items-center space-x-2 mb-4">
+        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+          Nesta página
+        </h3>
       </div>
+
+      <nav>
+        <ul className="space-y-2 text-sm">
+          {normalizedItems.map((item, index) => (
+            <li key={`${item.id}-${index}`}>
+              <button
+                onClick={() => scrollToHeading(item.id)}
+                className={`cursor-pointer block w-full text-left transition-colors ${activeId === item.id
+                  ? 'text-blue-700'
+                  : 'text-gray-500 hover:opacity-80 hover:text-blue-600'
+                  }`}
+                style={{
+                  paddingLeft: `${(item.level - 1) * 12}px`,
+                }}
+              >
+                {item.title}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-6 p-3 bg-gray-100 rounded text-xs">
+          <div className="font-medium mb-2">Debug Info:</div>
+          <div>Active ID: <span className="font-mono">{activeId || 'none'}</span></div>
+          <div>Total items: {normalizedItems.length}</div>
+          <div className="mt-2">
+            <div className="font-medium">Generated IDs:</div>
+            {normalizedItems.map((item, index) => (
+              <div key={item.id + index} className="font-mono text-xs">
+                {item.id} (Level {item.level}): {item.title}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
