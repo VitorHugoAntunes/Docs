@@ -1,0 +1,622 @@
+---
+id: trie-estrutura
+title: Estrutura Trie (Árvore de Prefixos)
+slug: trie-estrutura
+category: Árvores
+description: Aprenda sobre a estrutura de dados Trie (árvore de prefixos), suas representações e operações básicas (inserção, busca, remoção).
+order: 5
+---
+
+# Estrutura Trie (Árvore de Prefixos)
+
+Aprenda sobre a estrutura de dados Trie (árvore de prefixos), suas representações e operações básicas (inserção, busca, remoção).
+
+## Definição
+
+Uma Trie (pronuncia-se "try", derivado de "retrieval") é uma estrutura de dados em árvore especializada para armazenar strings de forma eficiente. Cada nó representa um caractere, e o caminho da raiz até uma folha forma uma palavra completa. É particularmente útil para operações de busca por prefixos e autocompletar.
+
+### Propriedades fundamentais:
+- **Nó raiz:** Representa uma string vazia
+- **Caminho:** Da raiz até um nó específico forma um prefixo
+- **Palavra completa:** Indicada por um marcador especial no nó final
+- **Prefixos compartilhados:** Economizam espaço ao reutilizar nós comuns
+
+Abaixo temos um bloco de código em C que implementa uma estrutura Trie:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <ctype.h>
+
+#define ALFABETO_SIZE 26
+#define MAX_PALAVRA 100
+
+// Estrutura do nó da Trie
+typedef struct NoTrie {
+    struct NoTrie* filhos[ALFABETO_SIZE];
+    bool fimDaPalavra;
+    int frequencia; // Contador de ocorrências da palavra
+} NoTrie;
+
+// Estrutura da Trie
+typedef struct Trie {
+    NoTrie* raiz;
+    int totalPalavras;
+    int totalNos;
+} Trie;
+
+// Função para criar um novo nó
+NoTrie* criarNo() {
+    NoTrie* no = (NoTrie*)malloc(sizeof(NoTrie));
+    if (!no) return NULL;
+    
+    no->fimDaPalavra = false;
+    no->frequencia = 0;
+    
+    // Inicializar todos os filhos como NULL
+    for (int i = 0; i < ALFABETO_SIZE; i++) {
+        no->filhos[i] = NULL;
+    }
+    
+    return no;
+}
+
+// Função para criar uma nova Trie
+Trie* criarTrie() {
+    Trie* trie = (Trie*)malloc(sizeof(Trie));
+    if (!trie) return NULL;
+    
+    trie->raiz = criarNo();
+    trie->totalPalavras = 0;
+    trie->totalNos = 1; // Contar a raiz
+    
+    return trie;
+}
+
+// Função auxiliar para converter char para índice
+int charParaIndice(char c) {
+    return tolower(c) - 'a';
+}
+
+// Função auxiliar para converter índice para char
+char indiceParaChar(int indice) {
+    return 'a' + indice;
+}
+
+// Função para inserir uma palavra na Trie
+void inserir(Trie* trie, const char* palavra) {
+    if (!trie || !palavra || strlen(palavra) == 0) {
+        printf("Erro: Parâmetros inválidos para inserção\n");
+        return;
+    }
+    
+    NoTrie* atual = trie->raiz;
+    int tamanho = strlen(palavra);
+    
+    printf("Inserindo palavra: '%s'\n", palavra);
+    
+    for (int i = 0; i < tamanho; i++) {
+        int indice = charParaIndice(palavra[i]);
+        
+        // Verificar se o caractere é válido
+        if (indice < 0 || indice >= ALFABETO_SIZE) {
+            printf("Erro: Caractere '%c' não suportado\n", palavra[i]);
+            return;
+        }
+        
+        // Se o filho não existe, criar um novo nó
+        if (!atual->filhos[indice]) {
+            atual->filhos[indice] = criarNo();
+            if (!atual->filhos[indice]) {
+                printf("Erro: Falha na alocação de memória\n");
+                return;
+            }
+            trie->totalNos++;
+        }
+        
+        atual = atual->filhos[indice];
+    }
+    
+    // Marcar o final da palavra e incrementar frequência
+    if (!atual->fimDaPalavra) {
+        trie->totalPalavras++;
+    }
+    atual->fimDaPalavra = true;
+    atual->frequencia++;
+    
+    printf("Palavra '%s' inserida com sucesso (frequência: %d)\n", palavra, atual->frequencia);
+}
+
+// Função para buscar uma palavra na Trie
+bool buscar(Trie* trie, const char* palavra) {
+    if (!trie || !palavra) {
+        return false;
+    }
+    
+    NoTrie* atual = trie->raiz;
+    int tamanho = strlen(palavra);
+    
+    for (int i = 0; i < tamanho; i++) {
+        int indice = charParaIndice(palavra[i]);
+        
+        if (indice < 0 || indice >= ALFABETO_SIZE || !atual->filhos[indice]) {
+            return false;
+        }
+        
+        atual = atual->filhos[indice];
+    }
+    
+    return atual->fimDaPalavra;
+}
+
+// Função para obter a frequência de uma palavra
+int obterFrequencia(Trie* trie, const char* palavra) {
+    if (!trie || !palavra) {
+        return 0;
+    }
+    
+    NoTrie* atual = trie->raiz;
+    int tamanho = strlen(palavra);
+    
+    for (int i = 0; i < tamanho; i++) {
+        int indice = charParaIndice(palavra[i]);
+        
+        if (indice < 0 || indice >= ALFABETO_SIZE || !atual->filhos[indice]) {
+            return 0;
+        }
+        
+        atual = atual->filhos[indice];
+    }
+    
+    return atual->fimDaPalavra ? atual->frequencia : 0;
+}
+
+// Função para verificar se um prefixo existe
+bool temPrefixo(Trie* trie, const char* prefixo) {
+    if (!trie || !prefixo) {
+        return false;
+    }
+    
+    NoTrie* atual = trie->raiz;
+    int tamanho = strlen(prefixo);
+    
+    for (int i = 0; i < tamanho; i++) {
+        int indice = charParaIndice(prefixo[i]);
+        
+        if (indice < 0 || indice >= ALFABETO_SIZE || !atual->filhos[indice]) {
+            return false;
+        }
+        
+        atual = atual->filhos[indice];
+    }
+    
+    return true; // Prefixo existe se chegamos até aqui
+}
+
+// Função auxiliar para verificar se um nó é folha
+bool ehFolha(NoTrie* no) {
+    if (!no) return false;
+    
+    for (int i = 0; i < ALFABETO_SIZE; i++) {
+        if (no->filhos[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Função auxiliar recursiva para remoção
+NoTrie* removerAux(NoTrie* no, const char* palavra, int profundidade) {
+    if (!no) return NULL;
+    
+    // Se chegou ao final da palavra
+    if (profundidade == strlen(palavra)) {
+        // Desmarcar como fim de palavra
+        if (no->fimDaPalavra) {
+            no->fimDaPalavra = false;
+            no->frequencia = 0;
+        }
+        
+        // Se o nó não tem filhos, pode ser removido
+        if (ehFolha(no)) {
+            free(no);
+            return NULL;
+        }
+        
+        return no;
+    }
+    
+    // Recursão para o próximo caractere
+    int indice = charParaIndice(palavra[profundidade]);
+    if (indice >= 0 && indice < ALFABETO_SIZE) {
+        no->filhos[indice] = removerAux(no->filhos[indice], palavra, profundidade + 1);
+    }
+    
+    // Se o nó atual não é fim de palavra e não tem filhos, pode ser removido
+    if (!no->fimDaPalavra && ehFolha(no)) {
+        free(no);
+        return NULL;
+    }
+    
+    return no;
+}
+
+// Função para remover uma palavra da Trie
+bool remover(Trie* trie, const char* palavra) {
+    if (!trie || !palavra || !buscar(trie, palavra)) {
+        printf("Palavra '%s' não encontrada para remoção\n", palavra);
+        return false;
+    }
+    
+    printf("Removendo palavra: '%s'\n", palavra);
+    trie->raiz = removerAux(trie->raiz, palavra, 0);
+    trie->totalPalavras--;
+    
+    return true;
+}
+
+// Função auxiliar recursiva para listar palavras
+void listarPalavrasAux(NoTrie* no, char* prefixo, int profundidade) {
+    if (!no) return;
+    
+    // Se é o final de uma palavra, imprimir
+    if (no->fimDaPalavra) {
+        prefixo[profundidade] = '\0';
+        printf("'%s' (frequência: %d)\n", prefixo, no->frequencia);
+    }
+    
+    // Recursão para todos os filhos
+    for (int i = 0; i < ALFABETO_SIZE; i++) {
+        if (no->filhos[i]) {
+            prefixo[profundidade] = indiceParaChar(i);
+            listarPalavrasAux(no->filhos[i], prefixo, profundidade + 1);
+        }
+    }
+}
+
+// Função para listar todas as palavras da Trie
+void listarPalavras(Trie* trie) {
+    if (!trie) return;
+    
+    printf("\n=== Palavras na Trie ===\n");
+    char buffer[MAX_PALAVRA];
+    listarPalavrasAux(trie->raiz, buffer, 0);
+    printf("Total de palavras: %d\n\n", trie->totalPalavras);
+}
+
+// Função auxiliar para autocompletar
+void autocompletarAux(NoTrie* no, char* prefixo, int profundidade, int limite, int* contador) {
+    if (!no || *contador >= limite) return;
+    
+    // Se é o final de uma palavra, imprimir
+    if (no->fimDaPalavra) {
+        prefixo[profundidade] = '\0';
+        printf("  %s (freq: %d)\n", prefixo, no->frequencia);
+        (*contador)++;
+    }
+    
+    // Recursão para todos os filhos
+    for (int i = 0; i < ALFABETO_SIZE && *contador < limite; i++) {
+        if (no->filhos[i]) {
+            prefixo[profundidade] = indiceParaChar(i);
+            autocompletarAux(no->filhos[i], prefixo, profundidade + 1, limite, contador);
+        }
+    }
+}
+
+// Função para autocompletar baseado em um prefixo
+void autocompletar(Trie* trie, const char* prefixo, int limite) {
+    if (!trie || !prefixo) return;
+    
+    printf("Autocompletar para '%s':\n", prefixo);
+    
+    // Navegar até o final do prefixo
+    NoTrie* atual = trie->raiz;
+    int tamanho = strlen(prefixo);
+    char buffer[MAX_PALAVRA];
+    
+    // Copiar o prefixo para o buffer
+    strcpy(buffer, prefixo);
+    
+    for (int i = 0; i < tamanho; i++) {
+        int indice = charParaIndice(prefixo[i]);
+        
+        if (indice < 0 || indice >= ALFABETO_SIZE || !atual->filhos[indice]) {
+            printf("  Nenhuma palavra encontrada com o prefixo '%s'\n", prefixo);
+            return;
+        }
+        
+        atual = atual->filhos[indice];
+    }
+    
+    // Buscar todas as palavras a partir deste nó
+    int contador = 0;
+    autocompletarAux(atual, buffer, tamanho, limite, &contador);
+    
+    if (contador == 0) {
+        printf("  Nenhuma palavra encontrada\n");
+    } else {
+        printf("  Total de sugestões: %d\n", contador);
+    }
+    printf("\n");
+}
+
+// Função auxiliar para contar nós
+int contarNosAux(NoTrie* no) {
+    if (!no) return 0;
+    
+    int contador = 1; // Contar o nó atual
+    
+    for (int i = 0; i < ALFABETO_SIZE; i++) {
+        if (no->filhos[i]) {
+            contador += contarNosAux(no->filhos[i]);
+        }
+    }
+    
+    return contador;
+}
+
+// Função para obter estatísticas da Trie
+void obterEstatisticas(Trie* trie) {
+    if (!trie) return;
+    
+    printf("=== Estatísticas da Trie ===\n");
+    printf("Total de palavras: %d\n", trie->totalPalavras);
+    printf("Total de nós: %d\n", contarNosAux(trie->raiz));
+    
+    // Calcular profundidade máxima e média
+    // (implementação simplificada - pode ser expandida)
+    printf("Estrutura otimizada para prefixos compartilhados\n");
+    printf("Complexidade de busca: O(m), onde m é o tamanho da palavra\n\n");
+}
+
+// Função para imprimir a estrutura da Trie (visualização)
+void imprimirEstruturaAux(NoTrie* no, char* prefixo, int profundidade, bool ultimoFilho[], int nivel) {
+    if (!no) return;
+    
+    // Imprimir indentação
+    for (int i = 0; i < nivel - 1; i++) {
+        printf(ultimoFilho[i] ? "    " : "│   ");
+    }
+    
+    if (nivel > 0) {
+        printf(ultimoFilho[nivel - 1] ? "└── " : "├── ");
+        printf("%c", prefixo[profundidade - 1]);
+        if (no->fimDaPalavra) {
+            printf(" [PALAVRA: freq=%d]", no->frequencia);
+        }
+        printf("\n");
+    }
+    
+    // Contar filhos
+    int filhos[ALFABETO_SIZE];
+    int numFilhos = 0;
+    
+    for (int i = 0; i < ALFABETO_SIZE; i++) {
+        if (no->filhos[i]) {
+            filhos[numFilhos++] = i;
+        }
+    }
+    
+    // Recursão para filhos
+    for (int i = 0; i < numFilhos; i++) {
+        int indice = filhos[i];
+        prefixo[profundidade] = indiceParaChar(indice);
+        ultimoFilho[nivel] = (i == numFilhos - 1);
+        
+        imprimirEstruturaAux(no->filhos[indice], prefixo, profundidade + 1, ultimoFilho, nivel + 1);
+    }
+}
+
+// Função para imprimir a estrutura visual da Trie
+void imprimirEstrutura(Trie* trie) {
+    if (!trie) return;
+    
+    printf("=== Estrutura da Trie ===\n");
+    printf("RAIZ\n");
+    
+    char prefixo[MAX_PALAVRA];
+    bool ultimoFilho[MAX_PALAVRA];
+    
+    imprimirEstruturaAux(trie->raiz, prefixo, 0, ultimoFilho, 0);
+    printf("\n");
+}
+
+// Função para liberar memória da Trie
+void liberarTrieAux(NoTrie* no) {
+    if (!no) return;
+    
+    for (int i = 0; i < ALFABETO_SIZE; i++) {
+        if (no->filhos[i]) {
+            liberarTrieAux(no->filhos[i]);
+        }
+    }
+    
+    free(no);
+}
+
+void liberarTrie(Trie* trie) {
+    if (!trie) return;
+    
+    liberarTrieAux(trie->raiz);
+    free(trie);
+}
+```
+
+Agora, vamos criar uma função main para demonstrar o funcionamento da Trie:
+
+```c
+// Função principal para demonstrar a Trie
+int main() {
+    printf("=== Demonstração da Estrutura Trie ===\n\n");
+    
+    // Criar uma nova Trie
+    Trie* trie = criarTrie();
+    if (!trie) {
+        printf("Erro ao criar Trie\n");
+        return 1;
+    }
+    
+    // Inserir palavras
+    printf("=== Inserção de Palavras ===\n");
+    const char* palavras[] = {
+        "cat", "cats", "car", "card", "care", "careful",
+        "can", "canada", "programming", "program", "progress",
+        "tree", "trie", "try", "trying", "test", "testing"
+    };
+    
+    int numPalavras = sizeof(palavras) / sizeof(palavras[0]);
+    
+    for (int i = 0; i < numPalavras; i++) {
+        inserir(trie, palavras[i]);
+    }
+    
+    // Inserir algumas palavras repetidas para testar frequência
+    inserir(trie, "test");
+    inserir(trie, "programming");
+    inserir(trie, "cat");
+    
+    printf("\n");
+    
+    // Listar todas as palavras
+    listarPalavras(trie);
+    
+    // Imprimir estrutura visual
+    imprimirEstrutura(trie);
+    
+    // Demonstrar buscas
+    printf("=== Testes de Busca ===\n");
+    const char* testePalavras[] = {"cat", "car", "card", "cards", "python", "prog"};
+    int numTestes = sizeof(testePalavras) / sizeof(testePalavras[0]);
+    
+    for (int i = 0; i < numTestes; i++) {
+        bool encontrada = buscar(trie, testePalavras[i]);
+        int freq = obterFrequencia(trie, testePalavras[i]);
+        printf("'%s': %s", testePalavras[i], encontrada ? "ENCONTRADA" : "NÃO ENCONTRADA");
+        if (encontrada) {
+            printf(" (frequência: %d)", freq);
+        }
+        printf("\n");
+    }
+    printf("\n");
+    
+    // Demonstrar busca por prefixos
+    printf("=== Testes de Prefixo ===\n");
+    const char* testePrefixos[] = {"ca", "car", "prog", "te", "xyz"};
+    int numTestePrefixos = sizeof(testePrefixos) / sizeof(testePrefixos[0]);
+    
+    for (int i = 0; i < numTestePrefixos; i++) {
+        bool temPref = temPrefixo(trie, testePrefixos[i]);
+        printf("Prefixo '%s': %s\n", testePrefixos[i], temPref ? "EXISTE" : "NÃO EXISTE");
+    }
+    printf("\n");
+    
+    // Demonstrar autocompletar
+    printf("=== Demonstração de Autocompletar ===\n");
+    autocompletar(trie, "ca", 5);
+    autocompletar(trie, "prog", 3);
+    autocompletar(trie, "te", 4);
+    autocompletar(trie, "tr", 10);
+    
+    // Demonstrar remoção
+    printf("=== Teste de Remoção ===\n");
+    printf("Antes da remoção:\n");
+    autocompletar(trie, "car", 5);
+    
+    remover(trie, "card");
+    
+    printf("Após remover 'card':\n");
+    autocompletar(trie, "car", 5);
+    
+    // Estatísticas finais
+    obterEstatisticas(trie);
+    
+    // Liberar memória
+    liberarTrie(trie);
+    
+    return 0;
+}
+```
+
+## Representações Alternativas
+
+### 1. Trie Compactada (Radix Tree/Patricia Tree)
+```c
+typedef struct NoTrieCompactada {
+    char* substring;  // Armazena substring ao invés de char único
+    struct NoTrieCompactada** filhos;
+    int numFilhos;
+    bool fimDaPalavra;
+} NoTrieCompactada;
+```
+
+### 2. Trie com Array Dinâmico
+```c
+typedef struct NoTrieDinamico {
+    char caractere;
+    struct NoTrieDinamico** filhos;
+    int numFilhos;
+    int capacidade;
+    bool fimDaPalavra;
+} NoTrieDinamico;
+```
+
+## Complexidades das Operações
+
+| Operação | Complexidade de Tempo | Complexidade de Espaço |
+|----------|----------------------|------------------------|
+| Inserção | O(m) | O(ALFABETO_SIZE × N × m) |
+| Busca | O(m) | O(1) |
+| Remoção | O(m) | O(1) |
+| Prefixo | O(p) | O(1) |
+| Autocompletar | O(p + s) | O(s) |
+
+Onde:
+- **m**: comprimento da palavra
+- **p**: comprimento do prefixo
+- **s**: número de sugestões
+- **N**: número de palavras
+- **ALFABETO_SIZE**: tamanho do alfabeto (26 para letras minúsculas)
+
+## Aplicações Práticas
+
+### 1. Sistemas de Autocompletar
+- Editores de texto e IDEs
+- Mecanismos de busca
+- Aplicações móveis
+
+### 2. Verificadores Ortográficos
+- Dicionários digitais
+- Correção automática
+- Sugestões de palavras
+
+### 3. Roteamento IP
+- Tabelas de roteamento em redes
+- Longest Prefix Matching
+- Sistemas de DNS
+
+### 4. Compressão de Dados
+- Algoritmos de compressão
+- Codificação de strings
+- Detecção de padrões
+
+### 5. Bioinformática
+- Análise de sequências de DNA
+- Busca de padrões genéticos
+- Alinhamento de sequências
+
+## Vantagens e Desvantagens
+
+### Vantagens:
+- Busca extremamente rápida por prefixos
+- Economia de espaço para prefixos compartilhados
+- Suporte natural para autocompletar
+- Facilita operações com strings ordenadas
+
+### Desvantagens:
+- Pode consumir muita memória para alfabetos grandes
+- Não é eficiente para conjuntos pequenos de dados
+- Complexidade de implementação maior que hash tables
+- Pode ter muitos ponteiros nulos desperdiçando espaço

@@ -1,0 +1,531 @@
+---
+id: sorting-algorithms
+title: Algoritmos de Ordenação
+slug: sorting-algorithms
+category: Algoritmos
+description: Compreenda os principais algoritmos de ordenação (Bubble Sort, Insertion Sort, Selection Sort, Merge Sort, Quick Sort, Heap Sort) com implementações e análises de complexidade.
+order: 2
+---
+
+# Algoritmos de Ordenação
+
+Compreenda os principais algoritmos de ordenação, desde os mais simples como Bubble Sort até os mais eficientes como Merge Sort e Quick Sort, incluindo suas implementações, complexidades e casos de uso.
+
+## Introdução
+
+A ordenação é um dos problemas fundamentais da ciência da computação. Dado um conjunto de elementos, o objetivo é reorganizá-los em uma ordem específica (crescente ou decrescente). Diferentes algoritmos têm características distintas em termos de complexidade, estabilidade e uso de memória.
+
+## Conceitos Fundamentais
+
+### Estabilidade
+Um algoritmo de ordenação é **estável** se preserva a ordem relativa de elementos com chaves iguais.
+
+### Ordenação In-Place
+Um algoritmo é **in-place** se usa apenas uma quantidade constante de espaço adicional (O(1)).
+
+### Complexidade Temporal
+- **Melhor caso**: Menor número de operações
+- **Caso médio**: Número esperado de operações
+- **Pior caso**: Maior número de operações
+
+## Algoritmos Simples (O(n²))
+
+### 1. Bubble Sort
+
+O Bubble Sort compara elementos adjacentes e os troca se estiverem na ordem errada. O maior elemento "borbulha" até o final a cada passagem.
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <stdbool.h>
+
+// Função para trocar dois elementos
+void trocar(int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+// Bubble Sort básico
+void bubbleSort(int arr[], int n) {
+    printf("=== BUBBLE SORT ===\n");
+    
+    for (int i = 0; i < n - 1; i++) {
+        bool houveTroca = false;
+        
+        printf("Passagem %d: ", i + 1);
+        
+        // Últimos i elementos já estão ordenados
+        for (int j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                trocar(&arr[j], &arr[j + 1]);
+                houveTroca = true;
+            }
+        }
+        
+        // Imprime estado atual
+        for (int k = 0; k < n; k++) {
+            printf("%d ", arr[k]);
+        }
+        printf("\n");
+        
+        // Otimização: se não houve troca, o array está ordenado
+        if (!houveTroca) {
+            printf("Array já ordenado, parando...\n");
+            break;
+        }
+    }
+}
+```
+
+### 2. Selection Sort
+
+O Selection Sort encontra o menor elemento e o coloca na primeira posição, depois encontra o segundo menor e o coloca na segunda posição, e assim por diante.
+
+```c
+// Selection Sort
+void selectionSort(int arr[], int n) {
+    printf("\n=== SELECTION SORT ===\n");
+    
+    for (int i = 0; i < n - 1; i++) {
+        int indiceMenor = i;
+        
+        // Encontra o menor elemento no subarray não ordenado
+        for (int j = i + 1; j < n; j++) {
+            if (arr[j] < arr[indiceMenor]) {
+                indiceMenor = j;
+            }
+        }
+        
+        // Troca o menor elemento encontrado com o primeiro elemento
+        if (indiceMenor != i) {
+            trocar(&arr[i], &arr[indiceMenor]);
+        }
+        
+        printf("Passagem %d: ", i + 1);
+        for (int k = 0; k < n; k++) {
+            if (k <= i) {
+                printf("[%d] ", arr[k]); // Elementos ordenados
+            } else {
+                printf("%d ", arr[k]);
+            }
+        }
+        printf("\n");
+    }
+}
+```
+
+### 3. Insertion Sort
+
+O Insertion Sort constrói a sequência ordenada um elemento por vez, inserindo cada novo elemento em sua posição correta.
+
+```c
+// Insertion Sort
+void insertionSort(int arr[], int n) {
+    printf("\n=== INSERTION SORT ===\n");
+    
+    for (int i = 1; i < n; i++) {
+        int chave = arr[i];
+        int j = i - 1;
+        
+        printf("Inserindo %d: ", chave);
+        
+        // Move elementos maiores que a chave uma posição à frente
+        while (j >= 0 && arr[j] > chave) {
+            arr[j + 1] = arr[j];
+            j = j - 1;
+        }
+        
+        arr[j + 1] = chave;
+        
+        // Imprime estado atual
+        for (int k = 0; k < n; k++) {
+            if (k <= i) {
+                printf("[%d] ", arr[k]); // Parte ordenada
+            } else {
+                printf("%d ", arr[k]);
+            }
+        }
+        printf("\n");
+    }
+}
+```
+
+## Algoritmos Eficientes (O(n log n))
+
+### 4. Merge Sort
+
+O Merge Sort usa a estratégia "dividir para conquistar": divide o array em duas metades, ordena recursivamente cada metade e depois mescla as partes ordenadas.
+
+```c
+// Função para mesclar dois subarrays ordenados
+void merge(int arr[], int esquerda, int meio, int direita) {
+    int n1 = meio - esquerda + 1;
+    int n2 = direita - meio;
+    
+    // Arrays temporários
+    int *arrEsq = malloc(n1 * sizeof(int));
+    int *arrDir = malloc(n2 * sizeof(int));
+    
+    // Copia dados para arrays temporários
+    for (int i = 0; i < n1; i++) {
+        arrEsq[i] = arr[esquerda + i];
+    }
+    for (int j = 0; j < n2; j++) {
+        arrDir[j] = arr[meio + 1 + j];
+    }
+    
+    // Mescla os arrays temporários de volta em arr[esquerda..direita]
+    int i = 0, j = 0, k = esquerda;
+    
+    while (i < n1 && j < n2) {
+        if (arrEsq[i] <= arrDir[j]) {
+            arr[k] = arrEsq[i];
+            i++;
+        } else {
+            arr[k] = arrDir[j];
+            j++;
+        }
+        k++;
+    }
+    
+    // Copia os elementos restantes
+    while (i < n1) {
+        arr[k] = arrEsq[i];
+        i++;
+        k++;
+    }
+    
+    while (j < n2) {
+        arr[k] = arrDir[j];
+        j++;
+        k++;
+    }
+    
+    free(arrEsq);
+    free(arrDir);
+}
+
+// Merge Sort recursivo
+void mergeSortRecursivo(int arr[], int esquerda, int direita, int nivel) {
+    if (esquerda < direita) {
+        int meio = esquerda + (direita - esquerda) / 2;
+        
+        // Imprime divisão
+        printf("Nível %d: Dividindo [%d-%d] em [%d-%d] e [%d-%d]\n", 
+               nivel, esquerda, direita, esquerda, meio, meio + 1, direita);
+        
+        // Ordena primeira e segunda metades
+        mergeSortRecursivo(arr, esquerda, meio, nivel + 1);
+        mergeSortRecursivo(arr, meio + 1, direita, nivel + 1);
+        
+        // Mescla as metades ordenadas
+        merge(arr, esquerda, meio, direita);
+        
+        printf("Nível %d: Mesclando [%d-%d]: ", nivel, esquerda, direita);
+        for (int i = esquerda; i <= direita; i++) {
+            printf("%d ", arr[i]);
+        }
+        printf("\n");
+    }
+}
+
+// Função wrapper para Merge Sort
+void mergeSort(int arr[], int n) {
+    printf("\n=== MERGE SORT ===\n");
+    mergeSortRecursivo(arr, 0, n - 1, 0);
+}
+```
+
+### 5. Quick Sort
+
+O Quick Sort também usa "dividir para conquistar": escolhe um elemento como pivô, particiona o array de modo que elementos menores fiquem à esquerda e maiores à direita, então ordena recursivamente as partições.
+
+```c
+// Função de particionamento (esquema de Lomuto)
+int particionar(int arr[], int baixo, int alto) {
+    int pivo = arr[alto];  // Escolhe o último elemento como pivô
+    int i = (baixo - 1);   // Índice do menor elemento
+    
+    printf("Particionando com pivô %d: ", pivo);
+    
+    for (int j = baixo; j <= alto - 1; j++) {
+        // Se o elemento atual é menor ou igual ao pivô
+        if (arr[j] <= pivo) {
+            i++;
+            trocar(&arr[i], &arr[j]);
+        }
+    }
+    
+    trocar(&arr[i + 1], &arr[alto]);
+    
+    // Imprime resultado da partição
+    for (int k = baixo; k <= alto; k++) {
+        if (k == i + 1) {
+            printf("[%d] ", arr[k]); // Pivô na posição correta
+        } else {
+            printf("%d ", arr[k]);
+        }
+    }
+    printf("\n");
+    
+    return (i + 1);
+}
+
+// Quick Sort recursivo
+void quickSortRecursivo(int arr[], int baixo, int alto, int nivel) {
+    if (baixo < alto) {
+        printf("Nível %d: Ordenando subarray [%d-%d]\n", nivel, baixo, alto);
+        
+        // Particiona o array e obtém índice do pivô
+        int pi = particionar(arr, baixo, alto);
+        
+        // Ordena recursivamente elementos antes e depois do pivô
+        quickSortRecursivo(arr, baixo, pi - 1, nivel + 1);
+        quickSortRecursivo(arr, pi + 1, alto, nivel + 1);
+    }
+}
+
+// Função wrapper para Quick Sort
+void quickSort(int arr[], int n) {
+    printf("\n=== QUICK SORT ===\n");
+    quickSortRecursivo(arr, 0, n - 1, 0);
+}
+```
+
+### 6. Heap Sort
+
+O Heap Sort constrói um heap máximo e repetidamente extrai o elemento máximo, colocando-o no final do array.
+
+```c
+// Função para reorganizar o heap (heapify)
+void heapify(int arr[], int n, int i) {
+    int maior = i;        // Inicializa maior como raiz
+    int esq = 2 * i + 1;  // Filho esquerdo
+    int dir = 2 * i + 2;  // Filho direito
+    
+    // Se filho esquerdo é maior que raiz
+    if (esq < n && arr[esq] > arr[maior]) {
+        maior = esq;
+    }
+    
+    // Se filho direito é maior que o maior até agora
+    if (dir < n && arr[dir] > arr[maior]) {
+        maior = dir;
+    }
+    
+    // Se maior não é raiz
+    if (maior != i) {
+        trocar(&arr[i], &arr[maior]);
+        
+        // Recursivamente aplica heapify na subárvore afetada
+        heapify(arr, n, maior);
+    }
+}
+
+// Heap Sort
+void heapSort(int arr[], int n) {
+    printf("\n=== HEAP SORT ===\n");
+    
+    // Constrói heap (reorganiza array)
+    printf("Construindo max heap:\n");
+    for (int i = n / 2 - 1; i >= 0; i--) {
+        heapify(arr, n, i);
+        
+        printf("Heapify no índice %d: ", i);
+        for (int k = 0; k < n; k++) {
+            printf("%d ", arr[k]);
+        }
+        printf("\n");
+    }
+    
+    // Extrai elementos um por um do heap
+    printf("\nExtraindo elementos:\n");
+    for (int i = n - 1; i > 0; i--) {
+        // Move raiz atual para o fim
+        trocar(&arr[0], &arr[i]);
+        
+        printf("Extraído %d: ", arr[i]);
+        
+        // Chama heapify na heap reduzida
+        heapify(arr, i, 0);
+        
+        for (int k = 0; k < n; k++) {
+            if (k >= i) {
+                printf("[%d] ", arr[k]); // Elementos ordenados
+            } else {
+                printf("%d ", arr[k]);
+            }
+        }
+        printf("\n");
+    }
+}
+```
+
+## Funções Auxiliares e Testes
+
+```c
+// Função para imprimir array
+void imprimirArray(int arr[], int n, const char* titulo) {
+    printf("%s: ", titulo);
+    for (int i = 0; i < n; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n\n");
+}
+
+// Função para copiar array
+void copiarArray(int origem[], int destino[], int n) {
+    for (int i = 0; i < n; i++) {
+        destino[i] = origem[i];
+    }
+}
+
+// Função para verificar se array está ordenado
+bool estaOrdenado(int arr[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        if (arr[i] > arr[i + 1]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Função para gerar array aleatório
+void gerarArrayAleatorio(int arr[], int n, int max) {
+    srand(time(NULL));
+    for (int i = 0; i < n; i++) {
+        arr[i] = rand() % max + 1;
+    }
+}
+
+// Função para medir tempo de execução
+double medirTempo(void (*algoritmo)(int[], int), int arr[], int n) {
+    clock_t inicio = clock();
+    algoritmo(arr, n);
+    clock_t fim = clock();
+    
+    return ((double)(fim - inicio)) / CLOCKS_PER_SEC;
+}
+```
+
+## Programa Principal com Demonstração
+
+```c
+int main() {
+    const int tamanho = 8;
+    int arrayOriginal[] = {64, 34, 25, 12, 22, 11, 90, 5};
+    int arrayTeste[tamanho];
+    
+    printf("DEMONSTRAÇÃO DOS ALGORITMOS DE ORDENAÇÃO\n");
+    printf("========================================\n");
+    
+    imprimirArray(arrayOriginal, tamanho, "Array original");
+    
+    // Teste Bubble Sort
+    copiarArray(arrayOriginal, arrayTeste, tamanho);
+    bubbleSort(arrayTeste, tamanho);
+    printf("Resultado: %s\n\n", estaOrdenado(arrayTeste, tamanho) ? "CORRETO" : "ERRO");
+    
+    // Teste Selection Sort
+    copiarArray(arrayOriginal, arrayTeste, tamanho);
+    selectionSort(arrayTeste, tamanho);
+    printf("Resultado: %s\n\n", estaOrdenado(arrayTeste, tamanho) ? "CORRETO" : "ERRO");
+    
+    // Teste Insertion Sort
+    copiarArray(arrayOriginal, arrayTeste, tamanho);
+    insertionSort(arrayTeste, tamanho);
+    printf("Resultado: %s\n\n", estaOrdenado(arrayTeste, tamanho) ? "CORRETO" : "ERRO");
+    
+    // Teste Merge Sort
+    copiarArray(arrayOriginal, arrayTeste, tamanho);
+    mergeSort(arrayTeste, tamanho);
+    printf("Resultado: %s\n\n", estaOrdenado(arrayTeste, tamanho) ? "CORRETO" : "ERRO");
+    
+    // Teste Quick Sort
+    copiarArray(arrayOriginal, arrayTeste, tamanho);
+    quickSort(arrayTeste, tamanho);
+    printf("Resultado: %s\n\n", estaOrdenado(arrayTeste, tamanho) ? "CORRETO" : "ERRO");
+    
+    // Teste Heap Sort
+    copiarArray(arrayOriginal, arrayTeste, tamanho);
+    heapSort(arrayTeste, tamanho);
+    printf("Resultado: %s\n\n", estaOrdenado(arrayTeste, tamanho) ? "CORRETO" : "ERRO");
+    
+    // Teste de performance
+    printf("=== TESTE DE PERFORMANCE ===\n");
+    const int tamanhoGrande = 10000;
+    int *arrayGrande = malloc(tamanhoGrande * sizeof(int));
+    int *arrayTeste2 = malloc(tamanhoGrande * sizeof(int));
+    
+    gerarArrayAleatorio(arrayGrande, tamanhoGrande, 10000);
+    
+    printf("Testando com %d elementos aleatórios:\n", tamanhoGrande);
+    
+    // Quick Sort (mais rápido para teste)
+    copiarArray(arrayGrande, arrayTeste2, tamanhoGrande);
+    clock_t inicio = clock();
+    quickSort(arrayTeste2, tamanhoGrande);
+    clock_t fim = clock();
+    double tempo = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
+    
+    printf("Quick Sort: %.6f segundos\n", tempo);
+    printf("Resultado: %s\n", estaOrdenado(arrayTeste2, tamanhoGrande) ? "CORRETO" : "ERRO");
+    
+    free(arrayGrande);
+    free(arrayTeste2);
+    
+    return 0;
+}
+```
+
+## Comparação dos Algoritmos
+
+| Algoritmo | Melhor Caso | Caso Médio | Pior Caso | Espaço | Estável | In-Place |
+|-----------|-------------|------------|-----------|--------|---------|----------|
+| Bubble Sort | O(n) | O(n²) | O(n²) | O(1) | Sim | Sim |
+| Selection Sort | O(n²) | O(n²) | O(n²) | O(1) | Não | Sim |
+| Insertion Sort | O(n) | O(n²) | O(n²) | O(1) | Sim | Sim |
+| Merge Sort | O(n log n) | O(n log n) | O(n log n) | O(n) | Sim | Não |
+| Quick Sort | O(n log n) | O(n log n) | O(n²) | O(log n) | Não | Sim |
+| Heap Sort | O(n log n) | O(n log n) | O(n log n) | O(1) | Não | Sim |
+
+## Quando Usar Cada Algoritmo
+
+### Bubble Sort
+- **Use quando**: Arrays muito pequenos ou fins educacionais
+- **Evite quando**: Performance é importante
+
+### Selection Sort
+- **Use quando**: Memória é limitada e o número de trocas deve ser mínimo
+- **Evite quando**: Estabilidade é necessária
+
+### Insertion Sort
+- **Use quando**: Array está quase ordenado ou arrays pequenos
+- **Evite quando**: Arrays grandes e desordenados
+
+### Merge Sort
+- **Use quando**: Estabilidade é necessária e performance consistente é importante
+- **Evite quando**: Memória é limitada
+
+### Quick Sort
+- **Use quando**: Performance média é prioridade e memória é limitada
+- **Evite quando**: Performance consistente é crítica
+
+### Heap Sort
+- **Use quando**: Garantia de O(n log n) é necessária com O(1) espaço
+- **Evite quando**: Estabilidade é necessária
+
+## Otimizações Avançadas
+
+### Hybrid Sort (Introsort)
+Combina Quick Sort, Heap Sort e Insertion Sort para otimizar diferentes cenários.
+
+### Counting Sort
+Para quando os valores estão em um intervalo conhecido e pequeno.
+
+### Radix Sort
+Para ordenar números inteiros ou strings de tamanho fixo.
+
+Os algoritmos de ordenação são fundamentais para muitas aplicações e a escolha do algoritmo correto pode significar a diferença entre um programa eficiente e um que não atende aos requisitos de performance.

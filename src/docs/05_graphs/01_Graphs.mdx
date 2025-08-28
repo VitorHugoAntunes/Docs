@@ -1,0 +1,545 @@
+---
+id: graphs
+title: Grafos
+slug: graphs
+category: Grafos
+description: Aprenda sobre grafos, suas representações (matriz de adjacência, lista de adjacência), algoritmos de busca (DFS, BFS) e algoritmos clássicos.
+order: 1
+---
+
+# Grafos
+
+Aprenda sobre grafos, suas representações (matriz de adjacência, lista de adjacência), algoritmos de busca (DFS, BFS) e algoritmos clássicos como Dijkstra e Floyd-Warshall.
+
+## Definição
+
+Um grafo é uma estrutura de dados não-linear composta por um conjunto de vértices (ou nós) conectados por arestas. Formalmente, um grafo G é definido como G = (V, E), onde V é o conjunto de vértices e E é o conjunto de arestas.
+
+## Tipos de Grafos
+
+### 1. Grafo Direcionado vs Não-Direcionado
+- **Não-direcionado**: As arestas não têm direção (estrada de mão dupla)
+- **Direcionado (Dígrafo)**: As arestas têm direção específica (estrada de mão única)
+
+### 2. Grafo Ponderado vs Não-Ponderado
+- **Não-ponderado**: Todas as arestas têm peso igual
+- **Ponderado**: Cada aresta tem um peso/custo associado
+
+### 3. Outros Tipos
+- **Grafo Conexo**: Existe caminho entre qualquer par de vértices
+- **Grafo Acíclico**: Não contém ciclos
+- **Árvore**: Grafo conexo e acíclico
+
+## Representações de Grafos
+
+### 1. Matriz de Adjacência
+
+A matriz de adjacência é uma matriz quadrada onde `matriz[i][j] = 1` se existe uma aresta entre os vértices i e j.
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define MAX_VERTICES 10
+
+typedef struct {
+    int matriz[MAX_VERTICES][MAX_VERTICES];
+    int numVertices;
+    bool ehDirecionado;
+} GrafoMatriz;
+
+// Cria um grafo usando matriz de adjacência
+GrafoMatriz* criarGrafoMatriz(int numVertices, bool direcionado) {
+    GrafoMatriz* grafo = malloc(sizeof(GrafoMatriz));
+    grafo->numVertices = numVertices;
+    grafo->ehDirecionado = direcionado;
+    
+    // Inicializa a matriz com zeros
+    for (int i = 0; i < numVertices; i++) {
+        for (int j = 0; j < numVertices; j++) {
+            grafo->matriz[i][j] = 0;
+        }
+    }
+    
+    return grafo;
+}
+
+// Adiciona uma aresta ao grafo
+void adicionarArestaMatriz(GrafoMatriz* grafo, int origem, int destino) {
+    if (origem >= 0 && origem < grafo->numVertices && 
+        destino >= 0 && destino < grafo->numVertices) {
+        
+        grafo->matriz[origem][destino] = 1;
+        
+        // Se o grafo é não-direcionado, adiciona a aresta reversa
+        if (!grafo->ehDirecionado) {
+            grafo->matriz[destino][origem] = 1;
+        }
+        
+        printf("Aresta adicionada: %d -> %d\n", origem, destino);
+    }
+}
+
+// Remove uma aresta do grafo
+void removerArestaMatriz(GrafoMatriz* grafo, int origem, int destino) {
+    if (origem >= 0 && origem < grafo->numVertices && 
+        destino >= 0 && destino < grafo->numVertices) {
+        
+        grafo->matriz[origem][destino] = 0;
+        
+        if (!grafo->ehDirecionado) {
+            grafo->matriz[destino][origem] = 0;
+        }
+        
+        printf("Aresta removida: %d -> %d\n", origem, destino);
+    }
+}
+
+// Verifica se existe uma aresta
+bool existeArestaMatriz(GrafoMatriz* grafo, int origem, int destino) {
+    if (origem >= 0 && origem < grafo->numVertices && 
+        destino >= 0 && destino < grafo->numVertices) {
+        return grafo->matriz[origem][destino] == 1;
+    }
+    return false;
+}
+
+// Imprime a matriz de adjacência
+void imprimirMatriz(GrafoMatriz* grafo) {
+    printf("\nMatriz de Adjacência:\n");
+    printf("   ");
+    for (int i = 0; i < grafo->numVertices; i++) {
+        printf("%2d ", i);
+    }
+    printf("\n");
+    
+    for (int i = 0; i < grafo->numVertices; i++) {
+        printf("%2d ", i);
+        for (int j = 0; j < grafo->numVertices; j++) {
+            printf("%2d ", grafo->matriz[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+```
+
+### 2. Lista de Adjacência
+
+A lista de adjacência usa um array de listas ligadas, onde cada posição i contém uma lista dos vértices adjacentes ao vértice i.
+
+```c
+// Nó da lista de adjacência
+typedef struct No {
+    int vertice;
+    int peso;  // Para grafos ponderados
+    struct No* proximo;
+} No;
+
+// Grafo usando lista de adjacência
+typedef struct {
+    No** listaAdj;
+    int numVertices;
+    bool ehDirecionado;
+} GrafoLista;
+
+// Cria um grafo usando lista de adjacência
+GrafoLista* criarGrafoLista(int numVertices, bool direcionado) {
+    GrafoLista* grafo = malloc(sizeof(GrafoLista));
+    grafo->numVertices = numVertices;
+    grafo->ehDirecionado = direcionado;
+    
+    // Aloca array de ponteiros para as listas
+    grafo->listaAdj = malloc(numVertices * sizeof(No*));
+    
+    // Inicializa todas as listas como vazias
+    for (int i = 0; i < numVertices; i++) {
+        grafo->listaAdj[i] = NULL;
+    }
+    
+    return grafo;
+}
+
+// Cria um novo nó
+No* criarNo(int vertice, int peso) {
+    No* novoNo = malloc(sizeof(No));
+    novoNo->vertice = vertice;
+    novoNo->peso = peso;
+    novoNo->proximo = NULL;
+    return novoNo;
+}
+
+// Adiciona uma aresta na lista de adjacência
+void adicionarArestaLista(GrafoLista* grafo, int origem, int destino, int peso) {
+    // Adiciona destino à lista de origem
+    No* novoNo = criarNo(destino, peso);
+    novoNo->proximo = grafo->listaAdj[origem];
+    grafo->listaAdj[origem] = novoNo;
+    
+    // Se não-direcionado, adiciona origem à lista de destino
+    if (!grafo->ehDirecionado) {
+        novoNo = criarNo(origem, peso);
+        novoNo->proximo = grafo->listaAdj[destino];
+        grafo->listaAdj[destino] = novoNo;
+    }
+    
+    printf("Aresta adicionada: %d -> %d (peso: %d)\n", origem, destino, peso);
+}
+
+// Imprime a lista de adjacência
+void imprimirLista(GrafoLista* grafo) {
+    printf("\nLista de Adjacência:\n");
+    for (int i = 0; i < grafo->numVertices; i++) {
+        printf("Vértice %d: ", i);
+        No* atual = grafo->listaAdj[i];
+        
+        if (atual == NULL) {
+            printf("vazio");
+        } else {
+            while (atual != NULL) {
+                printf("%d(peso:%d)", atual->vertice, atual->peso);
+                if (atual->proximo != NULL) {
+                    printf(" -> ");
+                }
+                atual = atual->proximo;
+            }
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+```
+
+## Algoritmos de Busca
+
+### 1. Busca em Profundidade (DFS)
+
+A DFS explora o grafo visitando um vértice e então recursivamente visitando todos os seus vizinhos não visitados.
+
+```c
+// Array global para marcar vértices visitados
+bool visitado[MAX_VERTICES];
+
+// DFS recursiva usando matriz de adjacência
+void dfsMatriz(GrafoMatriz* grafo, int vertice) {
+    visitado[vertice] = true;
+    printf("%d ", vertice);
+    
+    // Visita todos os vértices adjacentes não visitados
+    for (int i = 0; i < grafo->numVertices; i++) {
+        if (grafo->matriz[vertice][i] == 1 && !visitado[i]) {
+            dfsMatriz(grafo, i);
+        }
+    }
+}
+
+// DFS usando lista de adjacência
+void dfsLista(GrafoLista* grafo, int vertice) {
+    visitado[vertice] = true;
+    printf("%d ", vertice);
+    
+    // Percorre a lista de adjacência do vértice
+    No* atual = grafo->listaAdj[vertice];
+    while (atual != NULL) {
+        if (!visitado[atual->vertice]) {
+            dfsLista(grafo, atual->vertice);
+        }
+        atual = atual->proximo;
+    }
+}
+
+// Função auxiliar para inicializar DFS
+void executarDFS(GrafoLista* grafo, int verticeInicial) {
+    // Inicializa array de visitados
+    for (int i = 0; i < grafo->numVertices; i++) {
+        visitado[i] = false;
+    }
+    
+    printf("DFS a partir do vértice %d: ", verticeInicial);
+    dfsLista(grafo, verticeInicial);
+    printf("\n");
+}
+```
+
+### 2. Busca em Largura (BFS)
+
+A BFS explora o grafo visitando todos os vértices a uma distância k antes de visitar vértices a distância k+1.
+
+```c
+#include <limits.h>
+
+// Implementação de fila simples para BFS
+typedef struct {
+    int items[MAX_VERTICES];
+    int frente, tras;
+} Fila;
+
+Fila* criarFila() {
+    Fila* fila = malloc(sizeof(Fila));
+    fila->frente = -1;
+    fila->tras = -1;
+    return fila;
+}
+
+bool filaVazia(Fila* fila) {
+    return fila->frente == -1;
+}
+
+void enfileirar(Fila* fila, int item) {
+    if (fila->tras == MAX_VERTICES - 1) {
+        printf("Fila cheia\n");
+        return;
+    }
+    
+    if (fila->frente == -1) {
+        fila->frente = 0;
+    }
+    
+    fila->tras++;
+    fila->items[fila->tras] = item;
+}
+
+int desenfileirar(Fila* fila) {
+    if (filaVazia(fila)) {
+        printf("Fila vazia\n");
+        return -1;
+    }
+    
+    int item = fila->items[fila->frente];
+    fila->frente++;
+    
+    if (fila->frente > fila->tras) {
+        fila->frente = fila->tras = -1;
+    }
+    
+    return item;
+}
+
+// BFS usando lista de adjacência
+void bfs(GrafoLista* grafo, int verticeInicial) {
+    // Inicializa array de visitados
+    for (int i = 0; i < grafo->numVertices; i++) {
+        visitado[i] = false;
+    }
+    
+    Fila* fila = criarFila();
+    visitado[verticeInicial] = true;
+    enfileirar(fila, verticeInicial);
+    
+    printf("BFS a partir do vértice %d: ", verticeInicial);
+    
+    while (!filaVazia(fila)) {
+        int verticeAtual = desenfileirar(fila);
+        printf("%d ", verticeAtual);
+        
+        // Visita todos os vértices adjacentes
+        No* atual = grafo->listaAdj[verticeAtual];
+        while (atual != NULL) {
+            if (!visitado[atual->vertice]) {
+                visitado[atual->vertice] = true;
+                enfileirar(fila, atual->vertice);
+            }
+            atual = atual->proximo;
+        }
+    }
+    
+    printf("\n");
+    free(fila);
+}
+```
+
+## Algoritmo de Dijkstra (Menor Caminho)
+
+Encontra o menor caminho de um vértice origem para todos os outros vértices em um grafo ponderado.
+
+```c
+int encontrarVerticeMinimo(int distancia[], bool visitado[], int numVertices) {
+    int min = INT_MAX, indiceMin = -1;
+    
+    for (int v = 0; v < numVertices; v++) {
+        if (!visitado[v] && distancia[v] <= min) {
+            min = distancia[v];
+            indiceMin = v;
+        }
+    }
+    
+    return indiceMin;
+}
+
+void dijkstra(GrafoMatriz* grafo, int origem) {
+    int distancia[MAX_VERTICES];
+    bool visitado[MAX_VERTICES];
+    
+    // Inicialização
+    for (int i = 0; i < grafo->numVertices; i++) {
+        distancia[i] = INT_MAX;
+        visitado[i] = false;
+    }
+    
+    distancia[origem] = 0;
+    
+    // Encontra menor caminho para todos os vértices
+    for (int count = 0; count < grafo->numVertices - 1; count++) {
+        int u = encontrarVerticeMinimo(distancia, visitado, grafo->numVertices);
+        
+        if (u == -1) break; // Não há mais vértices alcançáveis
+        
+        visitado[u] = true;
+        
+        // Atualiza distâncias dos vértices adjacentes
+        for (int v = 0; v < grafo->numVertices; v++) {
+            if (!visitado[v] && grafo->matriz[u][v] && 
+                distancia[u] != INT_MAX && 
+                distancia[u] + grafo->matriz[u][v] < distancia[v]) {
+                
+                distancia[v] = distancia[u] + grafo->matriz[u][v];
+            }
+        }
+    }
+    
+    // Imprime as distâncias
+    printf("\nMenores distâncias do vértice %d:\n", origem);
+    for (int i = 0; i < grafo->numVertices; i++) {
+        if (distancia[i] == INT_MAX) {
+            printf("Vértice %d: INF\n", i);
+        } else {
+            printf("Vértice %d: %d\n", i, distancia[i]);
+        }
+    }
+    printf("\n");
+}
+```
+
+## Exemplo de Uso Completo
+
+```c
+int main() {
+    printf("=== EXEMPLO COM LISTA DE ADJACÊNCIA ===\n");
+    
+    // Cria um grafo não-direcionado com 5 vértices
+    GrafoLista* grafoLista = criarGrafoLista(5, false);
+    
+    // Adiciona arestas
+    adicionarArestaLista(grafoLista, 0, 1, 2);
+    adicionarArestaLista(grafoLista, 0, 2, 4);
+    adicionarArestaLista(grafoLista, 1, 2, 1);
+    adicionarArestaLista(grafoLista, 1, 3, 7);
+    adicionarArestaLista(grafoLista, 2, 4, 3);
+    adicionarArestaLista(grafoLista, 3, 4, 2);
+    
+    imprimirLista(grafoLista);
+    
+    // Executa algoritmos de busca
+    executarDFS(grafoLista, 0);
+    bfs(grafoLista, 0);
+    
+    printf("\n=== EXEMPLO COM MATRIZ DE ADJACÊNCIA ===\n");
+    
+    // Cria um grafo direcionado ponderado com 4 vértices
+    GrafoMatriz* grafoMatriz = criarGrafoMatriz(4, true);
+    
+    // Para Dijkstra, usamos os pesos diretamente na matriz
+    grafoMatriz->matriz[0][1] = 5;
+    grafoMatriz->matriz[0][2] = 3;
+    grafoMatriz->matriz[1][2] = 2;
+    grafoMatriz->matriz[1][3] = 6;
+    grafoMatriz->matriz[2][1] = 1;
+    grafoMatriz->matriz[2][3] = 4;
+    
+    imprimirMatriz(grafoMatriz);
+    
+    // Executa Dijkstra
+    dijkstra(grafoMatriz, 0);
+    
+    // Libera memória
+    free(grafoLista->listaAdj);
+    free(grafoLista);
+    free(grafoMatriz);
+    
+    return 0;
+}
+```
+
+## Exemplo de Saída
+
+```
+=== EXEMPLO COM LISTA DE ADJACÊNCIA ===
+Aresta adicionada: 0 -> 1 (peso: 2)
+Aresta adicionada: 0 -> 2 (peso: 4)
+Aresta adicionada: 1 -> 2 (peso: 1)
+Aresta adicionada: 1 -> 3 (peso: 7)
+Aresta adicionada: 2 -> 4 (peso: 3)
+Aresta adicionada: 3 -> 4 (peso: 2)
+
+Lista de Adjacência:
+Vértice 0: 2(peso:4) -> 1(peso:2)
+Vértice 1: 3(peso:7) -> 2(peso:1) -> 0(peso:2)
+Vértice 2: 4(peso:3) -> 1(peso:1) -> 0(peso:4)
+Vértice 3: 4(peso:2) -> 1(peso:7)
+Vértice 4: 3(peso:2) -> 2(peso:3)
+
+DFS a partir do vértice 0: 0 2 4 3 1
+BFS a partir do vértice 0: 0 2 1 4 3
+
+=== EXEMPLO COM MATRIZ DE ADJACÊNCIA ===
+Matriz de Adjacência:
+    0  1  2  3
+ 0  0  5  3  0
+ 1  0  0  2  6
+ 2  0  1  0  4
+ 3  0  0  0  0
+
+Menores distâncias do vértice 0:
+Vértice 0: 0
+Vértice 1: 4
+Vértice 2: 3
+Vértice 3: 7
+```
+
+## Comparação de Representações
+
+| Aspecto | Matriz de Adjacência | Lista de Adjacência |
+|---------|---------------------|-------------------|
+| Espaço | O(V²) | O(V + E) |
+| Verificar aresta | O(1) | O(grau do vértice) |
+| Adicionar aresta | O(1) | O(1) |
+| Remover aresta | O(1) | O(grau do vértice) |
+| Melhor para | Grafos densos | Grafos esparsos |
+
+## Complexidade dos Algoritmos
+
+| Algoritmo | Complexidade de Tempo | Complexidade de Espaço |
+|-----------|----------------------|----------------------|
+| DFS | O(V + E) | O(V) |
+| BFS | O(V + E) | O(V) |
+| Dijkstra | O(V²) ou O((V + E) log V) | O(V) |
+
+## Aplicações Práticas
+
+### 1. Redes Sociais
+- Vértices: pessoas
+- Arestas: relacionamentos/amizades
+- Aplicação: sugestão de amigos, análise de influência
+
+### 2. Sistemas de Navegação
+- Vértices: interseções/cidades
+- Arestas: estradas com pesos (distância/tempo)
+- Aplicação: menor caminho, otimização de rotas
+
+### 3. Redes de Computadores
+- Vértices: roteadores/dispositivos
+- Arestas: conexões com latência/largura de banda
+- Aplicação: roteamento de pacotes, detecção de falhas
+
+### 4. Sistemas de Recomendação
+- Vértices: usuários e produtos
+- Arestas: avaliações/compras
+- Aplicação: recomendação de produtos
+
+### 5. Compiladores
+- Vértices: variáveis/blocos de código
+- Arestas: dependências
+- Aplicação: análise de fluxo de dados, otimizações
+
+Os grafos são uma das estruturas de dados mais versáteis e fundamentais, sendo essenciais para resolver problemas complexos em diversas áreas da ciência da computação e engenharia.

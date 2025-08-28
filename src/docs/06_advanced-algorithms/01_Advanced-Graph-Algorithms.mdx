@@ -1,0 +1,698 @@
+---
+id: algoritmos-grafos-avancados
+title: Algoritmos de Grafos Avançados
+slug: algoritmos-grafos-avancados
+category: Algoritmos Avançados
+description: Explore algoritmos avançados de grafos incluindo componentes fortemente conexas, pontes e articulações, e coloração de grafos.
+order: 1
+---
+
+# Algoritmos de Grafos Avançados
+
+Explore algoritmos avançados de grafos incluindo componentes fortemente conexas, pontes e articulações, e coloração de grafos.
+
+## Componentes Fortemente Conexas
+
+Uma componente fortemente conexa é um subgrafo maximal onde existe um caminho dirigido entre qualquer par de vértices.
+
+### Algoritmo de Tarjan
+
+O algoritmo de Tarjan encontra todas as componentes fortemente conexas em O(V + E).
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
+#define MAX_VERTICES 1000
+
+// Estrutura para lista de adjacência
+typedef struct No {
+    int vertice;
+    struct No* proximo;
+} No;
+
+typedef struct {
+    No* adjacentes[MAX_VERTICES];
+    int numVertices;
+} GrafoDirigido;
+
+// Estrutura para pilha
+typedef struct {
+    int itens[MAX_VERTICES];
+    int topo;
+} Pilha;
+
+// Estrutura para o algoritmo de Tarjan
+typedef struct {
+    int low[MAX_VERTICES];          // Menor tempo de descoberta alcançável
+    int descoberta[MAX_VERTICES];   // Tempo de descoberta
+    bool naPilha[MAX_VERTICES];     // Se o vértice está na pilha
+    Pilha pilha;                    // Pilha para DFS
+    int tempo;                      // Contador de tempo global
+    int numComponentes;             // Número de componentes encontradas
+} EstadoTarjan;
+
+// Inicializa grafo dirigido
+GrafoDirigido* criarGrafoDirigido(int numVertices) {
+    GrafoDirigido* grafo = (GrafoDirigido*)malloc(sizeof(GrafoDirigido));
+    grafo->numVertices = numVertices;
+    
+    for (int i = 0; i < numVertices; i++) {
+        grafo->adjacentes[i] = NULL;
+    }
+    
+    return grafo;
+}
+
+// Adiciona aresta dirigida
+void adicionarArestaDirigida(GrafoDirigido* grafo, int origem, int destino) {
+    No* novoNo = (No*)malloc(sizeof(No));
+    novoNo->vertice = destino;
+    novoNo->proximo = grafo->adjacentes[origem];
+    grafo->adjacentes[origem] = novoNo;
+}
+
+// Funções da pilha
+void inicializarPilha(Pilha* pilha) {
+    pilha->topo = -1;
+}
+
+void empilhar(Pilha* pilha, int item) {
+    pilha->itens[++pilha->topo] = item;
+}
+
+int desempilhar(Pilha* pilha) {
+    return pilha->itens[pilha->topo--];
+}
+
+bool pilhaVazia(Pilha* pilha) {
+    return pilha->topo == -1;
+}
+
+// Função auxiliar do algoritmo de Tarjan
+void tarjanDFS(GrafoDirigido* grafo, int u, EstadoTarjan* estado) {
+    // Define descoberta e low
+    estado->descoberta[u] = estado->low[u] = ++estado->tempo;
+    empilhar(&estado->pilha, u);
+    estado->naPilha[u] = true;
+    
+    // Percorre todos os adjacentes
+    No* atual = grafo->adjacentes[u];
+    while (atual != NULL) {
+        int v = atual->vertice;
+        
+        if (estado->descoberta[v] == -1) {
+            // Se v não foi visitado, faz DFS recursivo
+            tarjanDFS(grafo, v, estado);
+            
+            // Atualiza low[u] se necessário
+            estado->low[u] = (estado->low[v] < estado->low[u]) ? estado->low[v] : estado->low[u];
+        } else if (estado->naPilha[v]) {
+            // Se v está na pilha, atualiza low[u]
+            estado->low[u] = (estado->descoberta[v] < estado->low[u]) ? estado->descoberta[v] : estado->low[u];
+        }
+        
+        atual = atual->proximo;
+    }
+    
+    // Se u é raiz de uma SCC, desempilha todos os vértices da componente
+    if (estado->low[u] == estado->descoberta[u]) {
+        printf("Componente Fortemente Conexa %d: {", ++estado->numComponentes);
+        
+        int v;
+        bool primeiro = true;
+        do {
+            v = desempilhar(&estado->pilha);
+            estado->naPilha[v] = false;
+            
+            if (!primeiro) printf(", ");
+            printf("%d", v);
+            primeiro = false;
+        } while (v != u);
+        
+        printf("}\n");
+    }
+}
+
+// Algoritmo de Tarjan para encontrar SCCs
+void encontrarComponentesFortementeConexas(GrafoDirigido* grafo) {
+    EstadoTarjan estado;
+    
+    // Inicializa estruturas
+    inicializarPilha(&estado.pilha);
+    estado.tempo = 0;
+    estado.numComponentes = 0;
+    
+    for (int i = 0; i < grafo->numVertices; i++) {
+        estado.descoberta[i] = -1;
+        estado.low[i] = -1;
+        estado.naPilha[i] = false;
+    }
+    
+    printf("=== Encontrando Componentes Fortemente Conexas ===\n");
+    
+    // Executa DFS para cada vértice não visitado
+    for (int i = 0; i < grafo->numVertices; i++) {
+        if (estado.descoberta[i] == -1) {
+            tarjanDFS(grafo, i, &estado);
+        }
+    }
+    
+    printf("Total de componentes encontradas: %d\n\n", estado.numComponentes);
+}
+```
+
+## Pontes e Articulações
+
+Pontes são arestas cuja remoção aumenta o número de componentes conexas. Articulações são vértices com a mesma propriedade.
+
+### Implementação para Encontrar Pontes:
+
+```c
+// Estrutura para grafo não-dirigido
+typedef struct {
+    No* adjacentes[MAX_VERTICES];
+    int numVertices;
+    int numArestas;
+} GrafoNaoDirigido;
+
+// Estado para algoritmo de pontes
+typedef struct {
+    int descoberta[MAX_VERTICES];
+    int low[MAX_VERTICES];
+    int pai[MAX_VERTICES];
+    bool visitado[MAX_VERTICES];
+    int tempo;
+    int numPontes;
+} EstadoPontes;
+
+// Cria grafo não-dirigido
+GrafoNaoDirigido* criarGrafoNaoDirigido(int numVertices) {
+    GrafoNaoDirigido* grafo = (GrafoNaoDirigido*)malloc(sizeof(GrafoNaoDirigido));
+    grafo->numVertices = numVertices;
+    grafo->numArestas = 0;
+    
+    for (int i = 0; i < numVertices; i++) {
+        grafo->adjacentes[i] = NULL;
+    }
+    
+    return grafo;
+}
+
+// Adiciona aresta não-dirigida
+void adicionarArestaNaoDirigida(GrafoNaoDirigido* grafo, int u, int v) {
+    // Adiciona v à lista de u
+    No* novoNo1 = (No*)malloc(sizeof(No));
+    novoNo1->vertice = v;
+    novoNo1->proximo = grafo->adjacentes[u];
+    grafo->adjacentes[u] = novoNo1;
+    
+    // Adiciona u à lista de v
+    No* novoNo2 = (No*)malloc(sizeof(No));
+    novoNo2->vertice = u;
+    novoNo2->proximo = grafo->adjacentes[v];
+    grafo->adjacentes[v] = novoNo2;
+    
+    grafo->numArestas++;
+}
+
+// Função auxiliar para encontrar pontes
+void pontesDFS(GrafoNaoDirigido* grafo, int u, EstadoPontes* estado) {
+    estado->visitado[u] = true;
+    estado->descoberta[u] = estado->low[u] = ++estado->tempo;
+    
+    // Percorre todos os vértices adjacentes
+    No* atual = grafo->adjacentes[u];
+    while (atual != NULL) {
+        int v = atual->vertice;
+        
+        if (!estado->visitado[v]) {
+            estado->pai[v] = u;
+            pontesDFS(grafo, v, estado);
+            
+            // Atualiza low[u]
+            estado->low[u] = (estado->low[v] < estado->low[u]) ? estado->low[v] : estado->low[u];
+            
+            // Se low[v] > descoberta[u], então (u,v) é uma ponte
+            if (estado->low[v] > estado->descoberta[u]) {
+                printf("Ponte encontrada: (%d, %d)\n", u, v);
+                estado->numPontes++;
+            }
+        } else if (v != estado->pai[u]) {
+            // Aresta de retorno - atualiza low[u]
+            estado->low[u] = (estado->descoberta[v] < estado->low[u]) ? estado->descoberta[v] : estado->low[u];
+        }
+        
+        atual = atual->proximo;
+    }
+}
+
+// Encontra todas as pontes do grafo
+void encontrarPontes(GrafoNaoDirigido* grafo) {
+    EstadoPontes estado;
+    
+    // Inicializa estruturas
+    estado.tempo = 0;
+    estado.numPontes = 0;
+    
+    for (int i = 0; i < grafo->numVertices; i++) {
+        estado.descoberta[i] = -1;
+        estado.low[i] = -1;
+        estado.pai[i] = -1;
+        estado.visitado[i] = false;
+    }
+    
+    printf("=== Encontrando Pontes ===\n");
+    
+    // Executa DFS para cada componente conexa
+    for (int i = 0; i < grafo->numVertices; i++) {
+        if (!estado.visitado[i]) {
+            pontesDFS(grafo, i, &estado);
+        }
+    }
+    
+    printf("Total de pontes encontradas: %d\n\n", estado.numPontes);
+}
+
+// Estado para algoritmo de articulações
+typedef struct {
+    int descoberta[MAX_VERTICES];
+    int low[MAX_VERTICES];
+    int pai[MAX_VERTICES];
+    bool visitado[MAX_VERTICES];
+    bool articulacao[MAX_VERTICES];
+    int tempo;
+    int numArticulacoes;
+} EstadoArticulacoes;
+
+// Função auxiliar para encontrar articulações
+void articulacoesDFS(GrafoNaoDirigido* grafo, int u, EstadoArticulacoes* estado) {
+    int filhos = 0;
+    
+    estado->visitado[u] = true;
+    estado->descoberta[u] = estado->low[u] = ++estado->tempo;
+    
+    No* atual = grafo->adjacentes[u];
+    while (atual != NULL) {
+        int v = atual->vertice;
+        
+        if (!estado->visitado[v]) {
+            filhos++;
+            estado->pai[v] = u;
+            articulacoesDFS(grafo, v, estado);
+            
+            // Atualiza low[u]
+            estado->low[u] = (estado->low[v] < estado->low[u]) ? estado->low[v] : estado->low[u];
+            
+            // Casos para articulação:
+            // 1. u é raiz da DFS e tem mais de um filho
+            if (estado->pai[u] == -1 && filhos > 1) {
+                estado->articulacao[u] = true;
+            }
+            
+            // 2. u não é raiz e low[v] >= descoberta[u]
+            if (estado->pai[u] != -1 && estado->low[v] >= estado->descoberta[u]) {
+                estado->articulacao[u] = true;
+            }
+        } else if (v != estado->pai[u]) {
+            // Aresta de retorno
+            estado->low[u] = (estado->descoberta[v] < estado->low[u]) ? estado->descoberta[v] : estado->low[u];
+        }
+        
+        atual = atual->proximo;
+    }
+}
+
+// Encontra todas as articulações do grafo
+void encontrarArticulacoes(GrafoNaoDirigido* grafo) {
+    EstadoArticulacoes estado;
+    
+    // Inicializa estruturas
+    estado.tempo = 0;
+    estado.numArticulacoes = 0;
+    
+    for (int i = 0; i < grafo->numVertices; i++) {
+        estado.descoberta[i] = -1;
+        estado.low[i] = -1;
+        estado.pai[i] = -1;
+        estado.visitado[i] = false;
+        estado.articulacao[i] = false;
+    }
+    
+    printf("=== Encontrando Articulações ===\n");
+    
+    // Executa DFS para cada componente conexa
+    for (int i = 0; i < grafo->numVertices; i++) {
+        if (!estado.visitado[i]) {
+            articulacoesDFS(grafo, i, &estado);
+        }
+    }
+    
+    printf("Articulações encontradas: {");
+    bool primeiro = true;
+    for (int i = 0; i < grafo->numVertices; i++) {
+        if (estado.articulacao[i]) {
+            if (!primeiro) printf(", ");
+            printf("%d", i);
+            estado.numArticulacoes++;
+            primeiro = false;
+        }
+    }
+    printf("}\n");
+    printf("Total de articulações: %d\n\n", estado.numArticulacoes);
+}
+
+// Coloração de Grafos
+typedef struct {
+    int cores[MAX_VERTICES];
+    int numCores;
+    bool usado[MAX_VERTICES];
+} EstadoColoracao;
+
+// Algoritmo guloso para coloração de grafos
+int coloracaoGulosa(GrafoNaoDirigido* grafo) {
+    EstadoColoracao estado;
+    
+    // Inicializa cores
+    for (int i = 0; i < grafo->numVertices; i++) {
+        estado.cores[i] = -1;
+    }
+    
+    printf("=== Coloração Gulosa do Grafo ===\n");
+    
+    // Atribui cor 0 ao primeiro vértice
+    estado.cores[0] = 0;
+    estado.numCores = 1;
+    
+    printf("Vértice 0: Cor 0\n");
+    
+    // Atribui cores aos demais vértices
+    for (int u = 1; u < grafo->numVertices; u++) {
+        // Marca cores usadas pelos adjacentes
+        for (int i = 0; i < grafo->numVertices; i++) {
+            estado.usado[i] = false;
+        }
+        
+        No* atual = grafo->adjacentes[u];
+        while (atual != NULL) {
+            int v = atual->vertice;
+            if (estado.cores[v] != -1) {
+                estado.usado[estado.cores[v]] = true;
+            }
+            atual = atual->proximo;
+        }
+        
+        // Encontra a menor cor disponível
+        int cor;
+        for (cor = 0; cor < grafo->numVertices; cor++) {
+            if (!estado.usado[cor]) {
+                break;
+            }
+        }
+        
+        estado.cores[u] = cor;
+        if (cor >= estado.numCores) {
+            estado.numCores = cor + 1;
+        }
+        
+        printf("Vértice %d: Cor %d\n", u, cor);
+    }
+    
+    printf("\nColoração completa:\n");
+    for (int i = 0; i < grafo->numVertices; i++) {
+        printf("Vértice %d: Cor %d\n", i, estado.cores[i]);
+    }
+    printf("Número cromático ≤ %d\n\n", estado.numCores);
+    
+    return estado.numCores;
+}
+
+// Verifica se a coloração é válida
+bool verificarColoracao(GrafoNaoDirigido* grafo, int cores[]) {
+    for (int u = 0; u < grafo->numVertices; u++) {
+        No* atual = grafo->adjacentes[u];
+        while (atual != NULL) {
+            int v = atual->vertice;
+            if (cores[u] == cores[v]) {
+                printf("ERRO: Vértices adjacentes %d e %d têm a mesma cor %d!\n", u, v, cores[u]);
+                return false;
+            }
+            atual = atual->proximo;
+        }
+    }
+    return true;
+}
+
+// Algoritmo de Welsh-Powell para coloração
+int coloracaoWelshPowell(GrafoNaoDirigido* grafo) {
+    // Array para armazenar graus dos vértices
+    typedef struct {
+        int vertice;
+        int grau;
+    } VerticeGrau;
+    
+    VerticeGrau vertices[MAX_VERTICES];
+    int cores[MAX_VERTICES];
+    
+    printf("=== Coloração Welsh-Powell ===\n");
+    
+    // Calcula graus
+    for (int i = 0; i < grafo->numVertices; i++) {
+        vertices[i].vertice = i;
+        vertices[i].grau = 0;
+        cores[i] = -1;
+        
+        No* atual = grafo->adjacentes[i];
+        while (atual != NULL) {
+            vertices[i].grau++;
+            atual = atual->proximo;
+        }
+    }
+    
+    // Ordena vértices por grau (decrescente) - bubble sort simples
+    for (int i = 0; i < grafo->numVertices - 1; i++) {
+        for (int j = 0; j < grafo->numVertices - i - 1; j++) {
+            if (vertices[j].grau < vertices[j + 1].grau) {
+                VerticeGrau temp = vertices[j];
+                vertices[j] = vertices[j + 1];
+                vertices[j + 1] = temp;
+            }
+        }
+    }
+    
+    printf("Ordem de coloração (por grau decrescente):\n");
+    for (int i = 0; i < grafo->numVertices; i++) {
+        printf("Vértice %d (grau %d)\n", vertices[i].vertice, vertices[i].grau);
+    }
+    printf("\n");
+    
+    int numCores = 0;
+    bool usado[MAX_VERTICES];
+    
+    // Colore vértices na ordem de grau decrescente
+    for (int i = 0; i < grafo->numVertices; i++) {
+        int u = vertices[i].vertice;
+        
+        // Inicializa cores usadas
+        for (int k = 0; k < MAX_VERTICES; k++) {
+            usado[k] = false;
+        }
+        
+        // Marca cores usadas pelos adjacentes
+        No* atual = grafo->adjacentes[u];
+        while (atual != NULL) {
+            int v = atual->vertice;
+            if (cores[v] != -1) {
+                usado[cores[v]] = true;
+            }
+            atual = atual->proximo;
+        }
+        
+        // Encontra menor cor disponível
+        int cor;
+        for (cor = 0; cor < MAX_VERTICES; cor++) {
+            if (!usado[cor]) {
+                break;
+            }
+        }
+        
+        cores[u] = cor;
+        if (cor >= numCores) {
+            numCores = cor + 1;
+        }
+        
+        printf("Vértice %d: Cor %d\n", u, cor);
+    }
+    
+    printf("Número de cores usado: %d\n\n", numCores);
+    return numCores;
+}
+
+// Exemplos e função main
+void exemploComponentesFortementeConexas() {
+    printf("╔══════════════════════════════════════════════════════════════╗\n");
+    printf("║            EXEMPLO: COMPONENTES FORTEMENTE CONEXAS          ║\n");
+    printf("╚══════════════════════════════════════════════════════════════╝\n\n");
+    
+    GrafoDirigido* grafo = criarGrafoDirigido(5);
+    
+    // Cria um grafo com múltiplas SCCs
+    adicionarArestaDirigida(grafo, 1, 0);
+    adicionarArestaDirigida(grafo, 0, 2);
+    adicionarArestaDirigida(grafo, 2, 1);
+    adicionarArestaDirigida(grafo, 0, 3);
+    adicionarArestaDirigida(grafo, 3, 4);
+    
+    printf("Grafo dirigido:\n");
+    printf("1 → 0 → 2 → 1 (ciclo)\n");
+    printf("0 → 3 → 4\n\n");
+    
+    encontrarComponentesFortementeConexas(grafo);
+    
+    free(grafo);
+}
+
+void exemploPontesArticulacoes() {
+    printf("╔══════════════════════════════════════════════════════════════╗\n");
+    printf("║               EXEMPLO: PONTES E ARTICULAÇÕES                ║\n");
+    printf("╚══════════════════════════════════════════════════════════════╝\n\n");
+    
+    GrafoNaoDirigido* grafo = criarGrafoNaoDirigido(7);
+    
+    // Cria um grafo com pontes e articulações
+    adicionarArestaNaoDirigida(grafo, 0, 1);
+    adicionarArestaNaoDirigida(grafo, 0, 2);
+    adicionarArestaNaoDirigida(grafo, 1, 2);
+    adicionarArestaNaoDirigida(grafo, 1, 3);  // Ponte
+    adicionarArestaNaoDirigida(grafo, 3, 4);
+    adicionarArestaNaoDirigida(grafo, 4, 5);
+    adicionarArestaNaoDirigida(grafo, 4, 6);
+    adicionarArestaNaoDirigida(grafo, 5, 6);
+    
+    printf("Estrutura do grafo:\n");
+    printf("Triângulo: 0-1-2-0\n");
+    printf("Ponte: 1-3\n");
+    printf("Caminho: 3-4\n");
+    printf("Triângulo: 4-5-6-4\n\n");
+    
+    encontrarPontes(grafo);
+    encontrarArticulacoes(grafo);
+    
+    free(grafo);
+}
+
+void exemploColoracao() {
+    printf("╔══════════════════════════════════════════════════════════════╗\n");
+    printf("║                  EXEMPLO: COLORAÇÃO                         ║\n");
+    printf("╚══════════════════════════════════════════════════════════════╝\n\n");
+    
+    GrafoNaoDirigido* grafo = criarGrafoNaoDirigido(5);
+    
+    // Cria um grafo que requer múltiplas cores
+    adicionarArestaNaoDirigida(grafo, 0, 1);
+    adicionarArestaNaoDirigida(grafo, 0, 2);
+    adicionarArestaNaoDirigida(grafo, 1, 2);
+    adicionarArestaNaoDirigida(grafo, 1, 3);
+    adicionarArestaNaoDirigida(grafo, 2, 3);
+    adicionarArestaNaoDirigida(grafo, 3, 4);
+    
+    printf("Estrutura do grafo:\n");
+    printf("Clique K4: 0-1-2-3 (todos conectados)\n");
+    printf("Extensão: 3-4\n\n");
+    
+    printf("Comparando algoritmos de coloração:\n\n");
+    
+    int cores1 = coloracaoGulosa(grafo);
+    int cores2 = coloracaoWelshPowell(grafo);
+    
+    printf("Resumo:\n");
+    printf("• Coloração gulosa: %d cores\n", cores1);
+    printf("• Welsh-Powell: %d cores\n", cores2);
+    printf("• Número cromático teórico (clique K4): 4 cores\n\n");
+    
+    free(grafo);
+}
+
+int main() {
+    printf("╔══════════════════════════════════════════════════════════════╗\n");
+    printf("║              ALGORITMOS DE GRAFOS AVANÇADOS                 ║\n");
+    printf("╚══════════════════════════════════════════════════════════════╝\n\n");
+    
+    exemploComponentesFortementeConexas();
+    printf("\n");
+    exemploPontesArticulacoes();
+    printf("\n");
+    exemploColoracao();
+    
+    printf("╔══════════════════════════════════════════════════════════════╗\n");
+    printf("║                     RESUMO TEÓRICO                          ║\n");
+    printf("╚══════════════════════════════════════════════════════════════╝\n\n");
+    
+    printf("📊 COMPLEXIDADES:\n");
+    printf("• Tarjan (SCCs): O(V + E)\n");
+    printf("• Pontes e Articulações: O(V + E)\n");
+    printf("• Coloração Gulosa: O(V²)\n");
+    printf("• Welsh-Powell: O(V² + V log V)\n\n");
+    
+    printf("🎯 APLICAÇÕES:\n");
+    printf("• SCCs: Análise de dependências, detecção de deadlocks\n");
+    printf("• Pontes: Redes críticas, pontos de falha\n");
+    printf("• Articulações: Análise de vulnerabilidade\n");
+    printf("• Coloração: Alocação de registradores, scheduling\n\n");
+    
+    printf("⚡ PROPRIEDADES:\n");
+    printf("• SCCs formam um DAG quando contraídas\n");
+    printf("• Pontes conectam diferentes componentes biconexas\n");
+    printf("• Articulações aumentam número de componentes se removidas\n");
+    printf("• Coloração é NP-completo, algoritmos são heurísticos\n");
+    
+    return 0;
+}
+```
+
+## Análise Detalhada dos Algoritmos
+
+### Algoritmo de Tarjan (SCCs)
+- **Princípio:** DFS com pilha e valores `low`
+- **Invariante:** `low[u]` = menor tempo de descoberta alcançável de u
+- **Detecção:** SCC encontrada quando `low[u] == descoberta[u]`
+
+### Algoritmo de Pontes
+- **Condição:** Aresta (u,v) é ponte se `low[v] > descoberta[u]`
+- **Significa:** Não há aresta de retorno que "pule" sobre (u,v)
+- **Aplicação:** Identificação de conexões críticas
+
+### Algoritmo de Articulações
+- **Caso 1:** Raiz da DFS com múltiplos filhos
+- **Caso 2:** `low[v] >= descoberta[u]` para não-raiz
+- **Intuição:** Remoção desconecta componentes
+
+### Coloração de Grafos
+- **Problema:** NP-completo para coloração ótima
+- **Heurísticas:** Gulosa, Welsh-Powell, algoritmos evolutivos
+- **Limitante:** Δ + 1 cores (Δ = grau máximo)
+
+## Aplicações Avançadas
+
+### 1. Análise de Redes Sociais
+- **SCCs:** Identificação de grupos fortemente conectados
+- **Pontes:** Usuários que conectam comunidades diferentes
+- **Coloração:** Classificação de usuários em grupos
+
+### 2. Análise de Sistemas
+- **SCCs:** Detecção de dependências circulares em software
+- **Articulações:** Identificação de componentes críticos
+- **Coloração:** Alocação de recursos sem conflitos
+
+### 3. Bioinformática
+- **SCCs:** Redes de regulação gênica
+- **Pontes:** Conexões evolutivas críticas
+- **Coloração:** Classificação de proteínas
+
+### 4. Redes de Transporte
+- **Pontes:** Identificação de gargalos
+- **Articulações:** Pontos críticos de infraestrutura
+- **Coloração:** Alocação de rotas sem interferência
+    

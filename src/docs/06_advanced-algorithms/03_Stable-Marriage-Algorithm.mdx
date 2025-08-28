@@ -1,0 +1,620 @@
+---
+id: algoritmos-casamento-estavel
+title: Algoritmos de Casamento Estável  
+slug: algoritmos-casamento-estavel
+category: Algoritmos Avançados
+description: Aprenda sobre algoritmos de casamento estável, incluindo Gale-Shapley, casamento bipartido e suas aplicações práticas.
+order: 3
+---
+
+# Algoritmos de Casamento Estável
+
+Aprenda sobre algoritmos de casamento estável, incluindo Gale-Shapley, casamento bipartido e suas aplicações práticas.
+
+## Definição
+
+Um casamento estável é uma correspondência entre dois conjuntos de elementos onde não existem pares que prefeririam estar casados entre si em vez de com seus parceiros atuais. O problema clássico envolve encontrar um casamento estável entre homens e mulheres baseado em suas preferências.
+
+### Conceitos Fundamentais:
+
+- **Casamento (Matching):** Correspondência um-para-um entre elementos de dois conjuntos
+- **Preferência:** Ordenação dos elementos do conjunto oposto por cada elemento
+- **Par Bloqueante:** Dois elementos que preferem um ao outro mais que seus parceiros atuais
+- **Estabilidade:** Ausência de pares bloqueantes no casamento
+- **Casamento Ótimo:** Melhor casamento possível para um dos lados
+
+### Propriedades:
+- **Existência:** Sempre existe pelo menos um casamento estável
+- **Unicidade:** Pode haver múltiplos casamentos estáveis
+- **Otimalidade:** O algoritmo Gale-Shapley produz o melhor casamento para o lado que propõe
+
+## Algoritmo Gale-Shapley
+
+O algoritmo Gale-Shapley encontra um casamento estável através de um processo iterativo de propostas e rejeições.
+
+### Implementação Completa em C:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
+#define MAX_PESSOAS 100
+
+// Estrutura para representar preferências
+typedef struct {
+    int preferencias[MAX_PESSOAS][MAX_PESSOAS];  // Matriz de preferências
+    int ranking[MAX_PESSOAS][MAX_PESSOAS];       // Ranking inverso para busca rápida
+    int numPessoas;                              // Número de pessoas em cada lado
+    char nomes[MAX_PESSOAS][50];                 // Nomes para facilitar visualização
+} SistemaPreferencias;
+
+// Estrutura para o estado do algoritmo
+typedef struct {
+    int casamentosHomens[MAX_PESSOAS];   // casamentosHomens[i] = mulher casada com homem i (-1 se solteiro)
+    int casamentosMulheres[MAX_PESSOAS]; // casamentosMulheres[i] = homem casado com mulher i (-1 se solteira)
+    int proximaProposta[MAX_PESSOAS];    // Próxima mulher para cada homem propor
+    bool homemLivre[MAX_PESSOAS];        // Status de liberdade dos homens
+    int numHomensLivres;                 // Contador de homens livres
+} EstadoCasamento;
+
+// Inicializa o sistema de preferências
+SistemaPreferencias* criarSistemaPreferencias(int numPessoas) {
+    SistemaPreferencias* sistema = (SistemaPreferencias*)malloc(sizeof(SistemaPreferencias));
+    sistema->numPessoas = numPessoas;
+    
+    // Inicializa arrays
+    for (int i = 0; i < numPessoas; i++) {
+        sprintf(sistema->nomes[i], "Pessoa%d", i);
+        for (int j = 0; j < numPessoas; j++) {
+            sistema->preferencias[i][j] = -1;
+            sistema->ranking[i][j] = -1;
+        }
+    }
+    
+    return sistema;
+}
+
+// Define nomes para as pessoas
+void definirNomes(SistemaPreferencias* sistema, char nomes[][50], int lado) {
+    for (int i = 0; i < sistema->numPessoas; i++) {
+        strcpy(sistema->nomes[i + (lado * sistema->numPessoas)], nomes[i]);
+    }
+}
+
+// Define as preferências de uma pessoa
+void definirPreferencias(SistemaPreferencias* sistema, int pessoa, int preferencias[], int lado) {
+    int offset = lado * sistema->numPessoas;
+    pessoa += offset;
+    
+    for (int i = 0; i < sistema->numPessoas; i++) {
+        int preferido = preferencias[i] + ((1 - lado) * sistema->numPessoas);
+        sistema->preferencias[pessoa][i] = preferido;
+        sistema->ranking[pessoa][preferido] = i;  // Ranking inverso
+    }
+}
+
+// Inicializa o estado do casamento
+EstadoCasamento* inicializarEstado(int numPessoas) {
+    EstadoCasamento* estado = (EstadoCasamento*)malloc(sizeof(EstadoCasamento));
+    
+    for (int i = 0; i < numPessoas; i++) {
+        estado->casamentosHomens[i] = -1;
+        estado->casamentosMulheres[i] = -1;
+        estado->proximaProposta[i] = 0;
+        estado->homemLivre[i] = true;
+    }
+    
+    estado->numHomensLivres = numPessoas;
+    return estado;
+}
+
+// Verifica se uma mulher prefere o novo pretendente ao atual parceiro
+bool mulherPreferePretendente(SistemaPreferencias* sistema, int mulher, int pretendente, int atual) {
+    int mulherOffset = sistema->numPessoas;
+    int rankingPretendente = sistema->ranking[mulher + mulherOffset][pretendente];
+    int rankingAtual = sistema->ranking[mulher + mulherOffset][atual];
+    
+    return rankingPretendente < rankingAtual;
+}
+
+// Imprime o estado atual do casamento
+void imprimirEstadoCasamento(SistemaPreferencias* sistema, EstadoCasamento* estado, int iteracao) {
+    printf("\n=== Iteração %d ===\n", iteracao);
+    printf("Casamentos atuais:\n");
+    
+    for (int i = 0; i < sistema->numPessoas; i++) {
+        if (estado->casamentosHomens[i] != -1) {
+            printf("  %s ↔ %s\n", 
+                   sistema->nomes[i], 
+                   sistema->nomes[estado->casamentosHomens[i] + sistema->numPessoas]);
+        }
+    }
+    
+    printf("Homens livres: ");
+    bool primeiro = true;
+    for (int i = 0; i < sistema->numPessoas; i++) {
+        if (estado->homemLivre[i]) {
+            if (!primeiro) printf(", ");
+            printf("%s", sistema->nomes[i]);
+            primeiro = false;
+        }
+    }
+    if (primeiro) printf("Nenhum");
+    printf("\n");
+}
+
+// Algoritmo Gale-Shapley
+EstadoCasamento* galeShapley(SistemaPreferencias* sistema) {
+    EstadoCasamento* estado = inicializarEstado(sistema->numPessoas);
+    int iteracao = 0;
+    
+    printf("=== Execução do Algoritmo Gale-Shapley ===\n");
+    printf("Os homens fazem propostas às mulheres baseadas em suas preferências.\n");
+    
+    while (estado->numHomensLivres > 0) {
+        iteracao++;
+        
+        // Encontra um homem livre
+        int homem = -1;
+        for (int i = 0; i < sistema->numPessoas; i++) {
+            if (estado->homemLivre[i]) {
+                homem = i;
+                break;
+            }
+        }
+        
+        // Encontra a próxima mulher na lista de preferências do homem
+        int mulher = sistema->preferencias[homem][estado->proximaProposta[homem]] - sistema->numPessoas;
+        estado->proximaProposta[homem]++;
+        
+        printf("\nIteração %d: %s propõe para %s\n", 
+               iteracao, sistema->nomes[homem], sistema->nomes[mulher + sistema->numPessoas]);
+        
+        if (estado->casamentosMulheres[mulher] == -1) {
+            // Mulher está livre - aceita a proposta
+            estado->casamentosHomens[homem] = mulher;
+            estado->casamentosMulheres[mulher] = homem;
+            estado->homemLivre[homem] = false;
+            estado->numHomensLivres--;
+            
+            printf("  %s aceita! Eles estão noivos.\n", sistema->nomes[mulher + sistema->numPessoas]);
+        } else {
+            // Mulher já está comprometida - verifica preferência
+            int parceirAtual = estado->casamentosMulheres[mulher];
+            
+            if (mulherPreferePretendente(sistema, mulher, homem, parceirAtual)) {
+                // Mulher prefere o novo pretendente
+                estado->casamentosHomens[parceirAtual] = -1;
+                estado->homemLivre[parceirAtual] = true;
+                estado->numHomensLivres++;
+                
+                estado->casamentosHomens[homem] = mulher;
+                estado->casamentosMulheres[mulher] = homem;
+                estado->homemLivre[homem] = false;
+                estado->numHomensLivres--;
+                
+                printf("  %s prefere %s a %s. Ela troca de parceiro.\n", 
+                       sistema->nomes[mulher + sistema->numPessoas],
+                       sistema->nomes[homem],
+                       sistema->nomes[parceirAtual]);
+                printf("  %s fica livre novamente.\n", sistema->nomes[parceirAtual]);
+            } else {
+                // Mulher prefere o parceiro atual
+                printf("  %s prefere seu parceiro atual %s. Proposta rejeitada.\n", 
+                       sistema->nomes[mulher + sistema->numPessoas],
+                       sistema->nomes[parceirAtual]);
+            }
+        }
+        
+        // Imprime estado a cada iteração (opcional para problemas pequenos)
+        if (sistema->numPessoas <= 5) {
+            imprimirEstadoCasamento(sistema, estado, iteracao);
+        }
+    }
+    
+    printf("\n=== Algoritmo Finalizado ===\n");
+    return estado;
+}
+
+// Verifica se o casamento é estável
+bool verificarEstabilidade(SistemaPreferencias* sistema, EstadoCasamento* estado) {
+    printf("\n=== Verificação de Estabilidade ===\n");
+    bool estavel = true;
+    
+    for (int homem = 0; homem < sistema->numPessoas; homem++) {
+        for (int mulher = 0; mulher < sistema->numPessoas; mulher++) {
+            int parceirHomem = estado->casamentosHomens[homem];
+            int parceirMulher = estado->casamentosMulheres[mulher];
+            
+            // Verifica se este homem e mulher formariam um par bloqueante
+            bool homemPrefereMulher = sistema->ranking[homem][mulher + sistema->numPessoas] < 
+                                     sistema->ranking[homem][parceirHomem + sistema->numPessoas];
+            bool mulherPrefereHomem = sistema->ranking[mulher + sistema->numPessoas][homem] < 
+                                     sistema->ranking[mulher + sistema->numPessoas][parceirMulher];
+            
+            if (homemPrefereMulher && mulherPrefereHomem) {
+                printf("PAR BLOQUEANTE ENCONTRADO: %s e %s se preferem aos seus parceiros atuais!\n",
+                       sistema->nomes[homem], sistema->nomes[mulher + sistema->numPessoas]);
+                estavel = false;
+            }
+        }
+    }
+    
+    if (estavel) {
+        printf("✓ O casamento é ESTÁVEL - não há pares bloqueantes.\n");
+    }
+    
+    return estavel;
+}
+
+// Calcula satisfação média dos homens e mulheres
+void calcularSatisfacao(SistemaPreferencias* sistema, EstadoCasamento* estado) {
+    printf("\n=== Análise de Satisfação ===\n");
+    
+    double satisfacaoHomens = 0.0;
+    double satisfacaoMulheres = 0.0;
+    
+    printf("Satisfação individual (quanto menor, melhor):\n");
+    printf("Homens:\n");
+    for (int i = 0; i < sistema->numPessoas; i++) {
+        int parceira = estado->casamentosHomens[i];
+        int ranking = sistema->ranking[i][parceira + sistema->numPessoas];
+        satisfacaoHomens += ranking + 1; // +1 para começar do 1 em vez de 0
+        printf("  %s (casado com %s): posição %d na sua lista\n", 
+               sistema->nomes[i], 
+               sistema->nomes[parceira + sistema->numPessoas], 
+               ranking + 1);
+    }
+    
+    printf("Mulheres:\n");
+    for (int i = 0; i < sistema->numPessoas; i++) {
+        int parceiro = estado->casamentosMulheres[i];
+        int ranking = sistema->ranking[i + sistema->numPessoas][parceiro];
+        satisfacaoMulheres += ranking + 1;
+        printf("  %s (casada com %s): posição %d na sua lista\n", 
+               sistema->nomes[i + sistema->numPessoas], 
+               sistema->nomes[parceiro], 
+               ranking + 1);
+    }
+    
+    satisfacaoHomens /= sistema->numPessoas;
+    satisfacaoMulheres /= sistema->numPessoas;
+    
+    printf("\nSatisfação média:\n");
+    printf("  Homens: %.2f\n", satisfacaoHomens);
+    printf("  Mulheres: %.2f\n", satisfacaoMulheres);
+    
+    if (satisfacaoHomens < satisfacaoMulheres) {
+        printf("  → Os homens estão mais satisfeitos (algoritmo otimiza para quem propõe)\n");
+    } else if (satisfacaoMulheres < satisfacaoHomens) {
+        printf("  → As mulheres estão mais satisfeitas\n");
+    } else {
+        printf("  → Satisfação equilibrada\n");
+    }
+}
+
+// Imprime as preferências de forma organizada
+void imprimirPreferencias(SistemaPreferencias* sistema) {
+    printf("\n=== Preferências ===\n");
+    
+    printf("Preferências dos Homens:\n");
+    for (int i = 0; i < sistema->numPessoas; i++) {
+        printf("  %s: ", sistema->nomes[i]);
+        for (int j = 0; j < sistema->numPessoas; j++) {
+            if (j > 0) printf(" > ");
+            printf("%s", sistema->nomes[sistema->preferencias[i][j]]);
+        }
+        printf("\n");
+    }
+    
+    printf("\nPreferências das Mulheres:\n");
+    for (int i = 0; i < sistema->numPessoas; i++) {
+        printf("  %s: ", sistema->nomes[i + sistema->numPessoas]);
+        for (int j = 0; j < sistema->numPessoas; j++) {
+            if (j > 0) printf(" > ");
+            printf("%s", sistema->nomes[sistema->preferencias[i + sistema->numPessoas][j]]);
+        }
+        printf("\n");
+    }
+}
+
+// Imprime o casamento final
+void imprimirCasamentoFinal(SistemaPreferencias* sistema, EstadoCasamento* estado) {
+    printf("\n=== Casamento Estável Final ===\n");
+    for (int i = 0; i < sistema->numPessoas; i++) {
+        printf("  %s ↔ %s\n", 
+               sistema->nomes[i], 
+               sistema->nomes[estado->casamentosHomens[i] + sistema->numPessoas]);
+    }
+}
+```
+
+Agora vamos criar exemplos de uso do algoritmo:
+
+```c
+// Função para criar exemplo clássico do livro
+void exemploClassico() {
+    printf("╔════════════════════════════════════════╗\n");
+    printf("║          EXEMPLO CLÁSSICO              ║\n");
+    printf("╚════════════════════════════════════════╝\n");
+    
+    SistemaPreferencias* sistema = criarSistemaPreferencias(4);
+    
+    // Definir nomes
+    char nomesHomens[4][50] = {"Alberto", "Bruno", "Carlos", "Daniel"};
+    char nomesMulheres[4][50] = {"Ana", "Beatriz", "Clara", "Diana"};
+    
+    definirNomes(sistema, nomesHomens, 0);  // 0 = homens
+    definirNomes(sistema, nomesMulheres, 1); // 1 = mulheres
+    
+    // Definir preferências dos homens (índices das mulheres: 0=Ana, 1=Beatriz, 2=Clara, 3=Diana)
+    int prefAlberto[] = {0, 1, 2, 3}; // Ana > Beatriz > Clara > Diana
+    int prefBruno[] = {1, 0, 2, 3};   // Beatriz > Ana > Clara > Diana
+    int prefCarlos[] = {0, 1, 2, 3};  // Ana > Beatriz > Clara > Diana
+    int prefDaniel[] = {1, 2, 3, 0};  // Beatriz > Clara > Diana > Ana
+    
+    definirPreferencias(sistema, 0, prefAlberto, 0);
+    definirPreferencias(sistema, 1, prefBruno, 0);
+    definirPreferencias(sistema, 2, prefCarlos, 0);
+    definirPreferencias(sistema, 3, prefDaniel, 0);
+    
+    // Definir preferências das mulheres (índices dos homens: 0=Alberto, 1=Bruno, 2=Carlos, 3=Daniel)
+    int prefAna[] = {1, 0, 2, 3};     // Bruno > Alberto > Carlos > Daniel
+    int prefBeatriz[] = {0, 1, 2, 3}; // Alberto > Bruno > Carlos > Daniel
+    int prefClara[] = {1, 2, 0, 3};   // Bruno > Carlos > Alberto > Daniel
+    int prefDiana[] = {0, 1, 2, 3};   // Alberto > Bruno > Carlos > Daniel
+    
+    definirPreferencias(sistema, 0, prefAna, 1);
+    definirPreferencias(sistema, 1, prefBeatriz, 1);
+    definirPreferencias(sistema, 2, prefClara, 1);
+    definirPreferencias(sistema, 3, prefDiana, 1);
+    
+    imprimirPreferencias(sistema);
+    
+    EstadoCasamento* resultado = galeShapley(sistema);
+    
+    imprimirCasamentoFinal(sistema, resultado);
+    verificarEstabilidade(sistema, resultado);
+    calcularSatisfacao(sistema, resultado);
+    
+    free(sistema);
+    free(resultado);
+}
+
+// Exemplo com conflito de interesses
+void exemploConflito() {
+    printf("\n\n╔════════════════════════════════════════╗\n");
+    printf("║       EXEMPLO COM CONFLITO             ║\n");
+    printf("╚════════════════════════════════════════╝\n");
+    
+    SistemaPreferencias* sistema = criarSistemaPreferencias(3);
+    
+    char nomesHomens[3][50] = {"João", "Pedro", "Paulo"};
+    char nomesMulheres[3][50] = {"Maria", "Carla", "Sofia"};
+    
+    definirNomes(sistema, nomesHomens, 0);
+    definirNomes(sistema, nomesMulheres, 1);
+    
+    // Todos os homens preferem Maria, depois Carla, depois Sofia
+    int prefHomens[] = {0, 1, 2}; // Maria > Carla > Sofia
+    definirPreferencias(sistema, 0, prefHomens, 0);
+    definirPreferencias(sistema, 1, prefHomens, 0);
+    definirPreferencias(sistema, 2, prefHomens, 0);
+    
+    // Todas as mulheres preferem Paulo, depois Pedro, depois João
+    int prefMulheres[] = {2, 1, 0}; // Paulo > Pedro > João
+    definirPreferencias(sistema, 0, prefMulheres, 1);
+    definirPreferencias(sistema, 1, prefMulheres, 1);
+    definirPreferencias(sistema, 2, prefMulheres, 1);
+    
+    imprimirPreferencias(sistema);
+    
+    EstadoCasamento* resultado = galeShapley(sistema);
+    
+    imprimirCasamentoFinal(sistema, resultado);
+    verificarEstabilidade(sistema, resultado);
+    calcularSatisfacao(sistema, resultado);
+    
+    free(sistema);
+    free(resultado);
+}
+
+// Algoritmo de casamento bipartido máximo (Hungarian Algorithm simplificado)
+typedef struct {
+    int custos[MAX_PESSOAS][MAX_PESSOAS];
+    int atribuicao[MAX_PESSOAS];
+    int numTrabalhos, numTrabalhadores;
+} ProblemaAtribuicao;
+
+ProblemaAtribuicao* criarProblemaAtribuicao(int numTrabalhadores, int numTrabalhos) {
+    ProblemaAtribuicao* problema = (ProblemaAtribuicao*)malloc(sizeof(ProblemaAtribuicao));
+    problema->numTrabalhadores = numTrabalhadores;
+    problema->numTrabalhos = numTrabalhos;
+    
+    for (int i = 0; i < numTrabalhadores; i++) {
+        problema->atribuicao[i] = -1;
+        for (int j = 0; j < numTrabalhos; j++) {
+            problema->custos[i][j] = 0;
+        }
+    }
+    
+    return problema;
+}
+
+// Algoritmo guloso para atribuição de custo mínimo
+int atribuicaoGulosamincara(ProblemaAtribuicao* problema) {
+    printf("\n=== Algoritmo de Atribuição Guloso ===\n");
+    
+    bool trabalhoAtribuido[MAX_PESSOAS] = {false};
+    int custoTotal = 0;
+    
+    for (int rodada = 0; rodada < problema->numTrabalhadores; rodada++) {
+        int melhorTrabalhador = -1;
+        int melhorTrabalho = -1;
+        int menorCusto = INT_MAX;
+        
+        // Encontra a melhor atribuição disponível
+        for (int i = 0; i < problema->numTrabalhadores; i++) {
+            if (problema->atribuicao[i] == -1) {  // Trabalhador livre
+                for (int j = 0; j < problema->numTrabalhos; j++) {
+                    if (!trabalhoAtribuido[j] && problema->custos[i][j] < menorCusto) {
+                        menorCusto = problema->custos[i][j];
+                        melhorTrabalhador = i;
+                        melhorTrabalho = j;
+                    }
+                }
+            }
+        }
+        
+        if (melhorTrabalhador != -1) {
+            problema->atribuicao[melhorTrabalhador] = melhorTrabalho;
+            trabalhoAtribuido[melhorTrabalho] = true;
+            custoTotal += menorCusto;
+            
+            printf("Trabalhador %d → Trabalho %d (custo: %d)\n", 
+                   melhorTrabalhador, melhorTrabalho, menorCusto);
+        }
+    }
+    
+    return custoTotal;
+}
+
+// Exemplo de problema de atribuição
+void exemploAtribuicao() {
+    printf("\n\n╔════════════════════════════════════════╗\n");
+    printf("║       PROBLEMA DE ATRIBUIÇÃO           ║\n");
+    printf("╚════════════════════════════════════════╝\n");
+    
+    ProblemaAtribuicao* problema = criarProblemaAtribuicao(4, 4);
+    
+    // Matriz de custos (trabalhador x trabalho)
+    int custos[4][4] = {
+        {9, 2, 7, 8},
+        {6, 4, 3, 7},
+        {5, 8, 1, 8},
+        {7, 6, 9, 4}
+    };
+    
+    printf("Matriz de custos (Trabalhador x Trabalho):\n");
+    printf("       T0  T1  T2  T3\n");
+    for (int i = 0; i < 4; i++) {
+        printf("W%d:   ", i);
+        for (int j = 0; j < 4; j++) {
+            problema->custos[i][j] = custos[i][j];
+            printf("%3d ", custos[i][j]);
+        }
+        printf("\n");
+    }
+    
+    int custoTotal = atribuicaoGulosamincara(problema);
+    
+    printf("\nAtribuição final (custo total: %d):\n", custoTotal);
+    for (int i = 0; i < problema->numTrabalhadores; i++) {
+        printf("Trabalhador %d → Trabalho %d\n", i, problema->atribuicao[i]);
+    }
+    
+    free(problema);
+}
+
+// Função principal
+int main() {
+    printf("╔══════════════════════════════════════════════════════════════╗\n");
+    printf("║              ALGORITMOS DE CASAMENTO ESTÁVEL                ║\n");
+    printf("╚══════════════════════════════════════════════════════════════╝\n");
+    
+    // Executa os exemplos
+    exemploClassico();
+    exemploConflito();
+    exemploAtribuicao();
+    
+    printf("\n╔══════════════════════════════════════════════════════════════╗\n");
+    printf("║                       RESUMO TEÓRICO                        ║\n");
+    printf("╚══════════════════════════════════════════════════════════════╝\n");
+    
+    printf("\n📊 COMPLEXIDADES:\n");
+    printf("• Gale-Shapley: O(n²) onde n é o número de pessoas de cada lado\n");
+    printf("• Verificação de estabilidade: O(n²)\n");
+    printf("• Atribuição gulosa: O(n³)\n");
+    
+    printf("\n🎯 PROPRIEDADES DO GALE-SHAPLEY:\n");
+    printf("• Sempre produz um casamento estável\n");
+    printf("• Otimiza para o lado que faz as propostas\n");
+    printf("• É à prova de estratégia para quem propõe\n");
+    printf("• Produz o casamento ótimo para homens e pessimal para mulheres\n");
+    
+    printf("\n🔄 VARIAÇÕES:\n");
+    printf("• Mulheres propondo: otimiza para as mulheres\n");
+    printf("• Casamento com listas incompletas\n");
+    printf("• Casamento com empates nas preferências\n");
+    printf("• Casamento many-to-one (hospitais e residentes)\n");
+    
+    return 0;
+}
+```
+
+## Análise de Complexidade
+
+### Algoritmo Gale-Shapley:
+- **Complexidade de Tempo:** O(n²), onde n é o número de pessoas em cada lado
+- **Complexidade de Espaço:** O(n²) para armazenar preferências e rankings
+- **Número máximo de propostas:** n² - n + 1
+
+### Propriedades Importantes:
+1. **Terminação:** O algoritmo sempre termina
+2. **Estabilidade:** O resultado é sempre um casamento estável
+3. **Otimalidade:** Produz o melhor casamento possível para o lado que propõe
+4. **Unicidade:** Diferentes ordens de propostas podem levar ao mesmo resultado
+
+## Variações e Extensões
+
+### 1. Casamento com Listas Incompletas
+Nem todos precisam classificar todos do outro lado - algumas pessoas podem ser inaceitáveis.
+
+### 2. Casamento Many-to-One
+Hospitais contratando residentes, onde cada hospital pode contratar múltiplos residentes.
+
+### 3. Casamento com Empates
+Preferências podem incluir empates, criando múltiplas soluções estáveis.
+
+### 4. Casamento Egalitário
+Minimiza a soma dos rankings de satisfação de ambos os lados.
+
+## Aplicações Práticas
+
+### 1. Mercados de Dois Lados
+- **NRMP (National Resident Matching Program):** Atribuição de estudantes de medicina a hospitais
+- **Admissões escolares:** Atribuição de estudantes a escolas
+- **Mercados de trabalho:** Correspondência entre candidatos e empregadores
+
+### 2. Alocação de Recursos
+- **Alocação de órgãos:** Distribuição de órgãos para transplante
+- **Alocação de dormitórios:** Atribuição de estudantes a quartos
+- **Distribuição de turnos:** Atribuição de funcionários a horários
+
+### 3. Problemas Econômicos
+- **Mercados de casamento:** Modelagem econômica de decisões matrimoniais
+- **Comércio bilateral:** Acordos comerciais entre países
+- **Parcerias estratégicas:** Formação de alianças empresariais
+
+### 4. Teoria dos Jogos
+- **Mecanismos à prova de estratégia:** Design de sistemas onde não compensa mentir
+- **Equilíbrio de Nash:** Situações onde nenhum jogador quer mudar sua estratégia
+- **Bem-estar social:** Maximização do benefício coletivo
+
+### 5. Ciência da Computação
+- **Balanceamento de carga:** Distribuição de tarefas entre servidores  
+- **Alocação de recursos em nuvem:** Atribuição eficiente de recursos computacionais
+- **Roteamento em redes:** Seleção de caminhos ótimos em redes de comunicação
+
+## Considerações Éticas e Sociais
+
+### Justiça vs. Eficiência
+O algoritmo Gale-Shapley favorece sistematicamente um lado, levantando questões sobre equidade em aplicações do mundo real.
+
+### Transparência
+Em aplicações práticas, é importante que os participantes entendam como o algoritmo funciona e suas implicações.
+
+### Manipulação
+Embora o algoritmo seja à prova de estratégia para quem propõe, o outro lado pode tentar manipular suas preferências declaradas.

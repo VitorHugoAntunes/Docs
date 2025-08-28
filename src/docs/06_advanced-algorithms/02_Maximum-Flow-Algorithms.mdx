@@ -1,0 +1,443 @@
+---
+id: algoritmos-fluxo-maximo
+title: Algoritmos de Fluxo Máximo
+slug: algoritmos-fluxo-maximo
+category: Algoritmos Avançados
+description: Aprenda sobre algoritmos de fluxo máximo, incluindo Ford-Fulkerson e Edmonds-Karp, com implementações completas e exemplos práticos.
+order: 2
+---
+
+# Algoritmos de Fluxo Máximo
+
+Aprenda sobre algoritmos de fluxo máximo, incluindo Ford-Fulkerson e Edmonds-Karp, com implementações completas e exemplos práticos.
+
+## Definição
+
+O problema do fluxo máximo consiste em encontrar o maior fluxo possível que pode ser enviado de um nó origem (source) para um nó destino (sink) em uma rede de fluxo, respeitando as capacidades das arestas.
+
+### Conceitos Fundamentais:
+
+- **Rede de Fluxo:** Grafo direcionado onde cada aresta possui uma capacidade
+- **Fluxo:** Quantidade de "material" que passa por uma aresta
+- **Capacidade:** Limite máximo de fluxo que uma aresta pode transportar
+- **Caminho Aumentante:** Caminho da origem ao destino com capacidade residual positiva
+- **Corte:** Partição dos vértices que separa origem e destino
+
+### Propriedades:
+- **Conservação de Fluxo:** Fluxo que entra = Fluxo que sai (exceto origem e destino)
+- **Restrição de Capacidade:** Fluxo em cada aresta ≤ capacidade da aresta
+- **Teorema do Fluxo Máximo-Corte Mínimo:** O valor do fluxo máximo é igual à capacidade do corte mínimo
+
+## Algoritmo Ford-Fulkerson
+
+O algoritmo Ford-Fulkerson é o método fundamental para resolver problemas de fluxo máximo. Ele utiliza o conceito de caminhos aumentantes e grafo residual.
+
+### Implementação Completa em C:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <stdbool.h>
+
+#define MAX_VERTICES 100
+
+// Estrutura para representar a rede de fluxo
+typedef struct {
+    int capacidade[MAX_VERTICES][MAX_VERTICES];  // Matriz de capacidades
+    int fluxo[MAX_VERTICES][MAX_VERTICES];       // Matriz de fluxos
+    int numVertices;                             // Número de vértices
+} RedeFluxo;
+
+// Estrutura para fila (usada na BFS)
+typedef struct {
+    int itens[MAX_VERTICES];
+    int frente, tras;
+} Fila;
+
+// Inicializa uma rede de fluxo
+RedeFluxo* criarRedeFluxo(int numVertices) {
+    RedeFluxo* rede = (RedeFluxo*)malloc(sizeof(RedeFluxo));
+    rede->numVertices = numVertices;
+    
+    // Inicializa matrizes com zero
+    for (int i = 0; i < numVertices; i++) {
+        for (int j = 0; j < numVertices; j++) {
+            rede->capacidade[i][j] = 0;
+            rede->fluxo[i][j] = 0;
+        }
+    }
+    return rede;
+}
+
+// Adiciona uma aresta com capacidade
+void adicionarAresta(RedeFluxo* rede, int origem, int destino, int capacidade) {
+    rede->capacidade[origem][destino] = capacidade;
+}
+
+// Funções para manipular a fila
+void inicializarFila(Fila* fila) {
+    fila->frente = -1;
+    fila->tras = -1;
+}
+
+bool filaVazia(Fila* fila) {
+    return fila->frente == -1;
+}
+
+void enfileirar(Fila* fila, int item) {
+    if (fila->tras == MAX_VERTICES - 1) return;
+    
+    if (fila->frente == -1) {
+        fila->frente = 0;
+        fila->tras = 0;
+    } else {
+        fila->tras++;
+    }
+    fila->itens[fila->tras] = item;
+}
+
+int desenfileirar(Fila* fila) {
+    if (filaVazia(fila)) return -1;
+    
+    int item = fila->itens[fila->frente];
+    if (fila->frente == fila->tras) {
+        fila->frente = -1;
+        fila->tras = -1;
+    } else {
+        fila->frente++;
+    }
+    return item;
+}
+
+// BFS para encontrar caminho aumentante (usado no Edmonds-Karp)
+bool bfs(RedeFluxo* rede, int origem, int destino, int predecessor[]) {
+    bool visitado[MAX_VERTICES];
+    Fila fila;
+    
+    // Inicializa arrays
+    for (int i = 0; i < rede->numVertices; i++) {
+        visitado[i] = false;
+        predecessor[i] = -1;
+    }
+    
+    inicializarFila(&fila);
+    enfileirar(&fila, origem);
+    visitado[origem] = true;
+    
+    while (!filaVazia(&fila)) {
+        int u = desenfileirar(&fila);
+        
+        for (int v = 0; v < rede->numVertices; v++) {
+            // Verifica se há capacidade residual
+            int capacidadeResidual = rede->capacidade[u][v] - rede->fluxo[u][v];
+            
+            if (!visitado[v] && capacidadeResidual > 0) {
+                visitado[v] = true;
+                predecessor[v] = u;
+                enfileirar(&fila, v);
+                
+                if (v == destino) {
+                    return true; // Caminho encontrado
+                }
+            }
+        }
+    }
+    
+    return false; // Não há caminho aumentante
+}
+
+// DFS para encontrar caminho aumentante (Ford-Fulkerson básico)
+bool dfs(RedeFluxo* rede, int atual, int destino, bool visitado[], int predecessor[]) {
+    if (atual == destino) {
+        return true;
+    }
+    
+    visitado[atual] = true;
+    
+    for (int v = 0; v < rede->numVertices; v++) {
+        int capacidadeResidual = rede->capacidade[atual][v] - rede->fluxo[atual][v];
+        
+        if (!visitado[v] && capacidadeResidual > 0) {
+            predecessor[v] = atual;
+            if (dfs(rede, v, destino, visitado, predecessor)) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+// Encontra caminho aumentante usando DFS
+bool encontrarCaminhoAumentante(RedeFluxo* rede, int origem, int destino, int predecessor[]) {
+    bool visitado[MAX_VERTICES];
+    
+    for (int i = 0; i < rede->numVertices; i++) {
+        visitado[i] = false;
+        predecessor[i] = -1;
+    }
+    
+    return dfs(rede, origem, destino, visitado, predecessor);
+}
+
+// Algoritmo Ford-Fulkerson
+int fordFulkerson(RedeFluxo* rede, int origem, int destino) {
+    int fluxoMaximo = 0;
+    int predecessor[MAX_VERTICES];
+    
+    printf("=== Execução do Algoritmo Ford-Fulkerson ===\n");
+    
+    // Enquanto existir caminho aumentante
+    while (encontrarCaminhoAumentante(rede, origem, destino, predecessor)) {
+        // Encontra a capacidade mínima ao longo do caminho
+        int fluxoCaminho = INT_MAX;
+        
+        printf("\nCaminho aumentante encontrado: ");
+        for (int v = destino; v != origem; v = predecessor[v]) {
+            int u = predecessor[v];
+            int capacidadeResidual = rede->capacidade[u][v] - rede->fluxo[u][v];
+            fluxoCaminho = (capacidadeResidual < fluxoCaminho) ? capacidadeResidual : fluxoCaminho;
+            printf("%d <- ", v);
+        }
+        printf("%d\n", origem);
+        printf("Fluxo do caminho: %d\n", fluxoCaminho);
+        
+        // Atualiza fluxos ao longo do caminho
+        for (int v = destino; v != origem; v = predecessor[v]) {
+            int u = predecessor[v];
+            rede->fluxo[u][v] += fluxoCaminho;  // Fluxo direto
+            rede->fluxo[v][u] -= fluxoCaminho;  // Fluxo reverso
+        }
+        
+        fluxoMaximo += fluxoCaminho;
+        printf("Fluxo máximo atual: %d\n", fluxoMaximo);
+    }
+    
+    printf("\n=== Algoritmo Ford-Fulkerson Finalizado ===\n");
+    return fluxoMaximo;
+}
+
+// Algoritmo Edmonds-Karp (Ford-Fulkerson com BFS)
+int edmondsKarp(RedeFluxo* rede, int origem, int destino) {
+    int fluxoMaximo = 0;
+    int predecessor[MAX_VERTICES];
+    
+    printf("=== Execução do Algoritmo Edmonds-Karp ===\n");
+    
+    // Enquanto existir caminho aumentante (usando BFS)
+    while (bfs(rede, origem, destino, predecessor)) {
+        // Encontra a capacidade mínima ao longo do caminho
+        int fluxoCaminho = INT_MAX;
+        
+        printf("\nCaminho mais curto encontrado: ");
+        for (int v = destino; v != origem; v = predecessor[v]) {
+            int u = predecessor[v];
+            int capacidadeResidual = rede->capacidade[u][v] - rede->fluxo[u][v];
+            fluxoCaminho = (capacidadeResidual < fluxoCaminho) ? capacidadeResidual : fluxoCaminho;
+            printf("%d <- ", v);
+        }
+        printf("%d\n", origem);
+        printf("Fluxo do caminho: %d\n", fluxoCaminho);
+        
+        // Atualiza fluxos ao longo do caminho
+        for (int v = destino; v != origem; v = predecessor[v]) {
+            int u = predecessor[v];
+            rede->fluxo[u][v] += fluxoCaminho;  // Fluxo direto
+            rede->fluxo[v][u] -= fluxoCaminho;  // Fluxo reverso
+        }
+        
+        fluxoMaximo += fluxoCaminho;
+        printf("Fluxo máximo atual: %d\n", fluxoMaximo);
+    }
+    
+    printf("\n=== Algoritmo Edmonds-Karp Finalizado ===\n");
+    return fluxoMaximo;
+}
+
+// Imprime a matriz de fluxos
+void imprimirFluxos(RedeFluxo* rede) {
+    printf("\n=== Matriz de Fluxos Finais ===\n");
+    printf("   ");
+    for (int i = 0; i < rede->numVertices; i++) {
+        printf("%3d", i);
+    }
+    printf("\n");
+    
+    for (int i = 0; i < rede->numVertices; i++) {
+        printf("%2d ", i);
+        for (int j = 0; j < rede->numVertices; j++) {
+            printf("%3d", rede->fluxo[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+// Encontra e imprime o corte mínimo
+void encontrarCorteMinimo(RedeFluxo* rede, int origem) {
+    bool visitado[MAX_VERTICES];
+    
+    // Inicializa visitados
+    for (int i = 0; i < rede->numVertices; i++) {
+        visitado[i] = false;
+    }
+    
+    // DFS a partir da origem usando apenas arestas com capacidade residual
+    Fila fila;
+    inicializarFila(&fila);
+    enfileirar(&fila, origem);
+    visitado[origem] = true;
+    
+    while (!filaVazia(&fila)) {
+        int u = desenfileirar(&fila);
+        
+        for (int v = 0; v < rede->numVertices; v++) {
+            int capacidadeResidual = rede->capacidade[u][v] - rede->fluxo[u][v];
+            
+            if (!visitado[v] && capacidadeResidual > 0) {
+                visitado[v] = true;
+                enfileirar(&fila, v);
+            }
+        }
+    }
+    
+    // Imprime o corte mínimo
+    printf("\n=== Corte Mínimo ===\n");
+    printf("Conjunto S (alcançável da origem): {");
+    bool primeiro = true;
+    for (int i = 0; i < rede->numVertices; i++) {
+        if (visitado[i]) {
+            if (!primeiro) printf(", ");
+            printf("%d", i);
+            primeiro = false;
+        }
+    }
+    printf("}\n");
+    
+    printf("Conjunto T (não alcançável): {");
+    primeiro = true;
+    for (int i = 0; i < rede->numVertices; i++) {
+        if (!visitado[i]) {
+            if (!primeiro) printf(", ");
+            printf("%d", i);
+            primeiro = false;
+        }
+    }
+    printf("}\n");
+    
+    printf("Arestas do corte: ");
+    int capacidadeCorte = 0;
+    primeiro = true;
+    for (int i = 0; i < rede->numVertices; i++) {
+        for (int j = 0; j < rede->numVertices; j++) {
+            if (visitado[i] && !visitado[j] && rede->capacidade[i][j] > 0) {
+                if (!primeiro) printf(", ");
+                printf("(%d,%d):%d", i, j, rede->capacidade[i][j]);
+                capacidadeCorte += rede->capacidade[i][j];
+                primeiro = false;
+            }
+        }
+    }
+    printf("\n");
+    printf("Capacidade do corte mínimo: %d\n", capacidadeCorte);
+}
+```
+
+Agora vamos criar a função main para demonstrar o funcionamento:
+
+```c
+// Função principal
+int main() {
+    // Exemplo 1: Rede simples
+    printf("=== EXEMPLO 1: Rede Simples ===\n");
+    RedeFluxo* rede1 = criarRedeFluxo(6);
+    
+    // Adicionando arestas (origem, destino, capacidade)
+    adicionarAresta(rede1, 0, 1, 16);
+    adicionarAresta(rede1, 0, 2, 13);
+    adicionarAresta(rede1, 1, 2, 10);
+    adicionarAresta(rede1, 1, 3, 12);
+    adicionarAresta(rede1, 2, 1, 4);
+    adicionarAresta(rede1, 2, 4, 14);
+    adicionarAresta(rede1, 3, 2, 9);
+    adicionarAresta(rede1, 3, 5, 20);
+    adicionarAresta(rede1, 4, 3, 7);
+    adicionarAresta(rede1, 4, 5, 4);
+    
+    printf("Executando Ford-Fulkerson...\n");
+    int fluxoMaximo1 = fordFulkerson(rede1, 0, 5);
+    printf("Fluxo máximo encontrado: %d\n", fluxoMaximo1);
+    
+    imprimirFluxos(rede1);
+    encontrarCorteMinimo(rede1, 0);
+    
+    // Resetar fluxos para testar Edmonds-Karp
+    for (int i = 0; i < rede1->numVertices; i++) {
+        for (int j = 0; j < rede1->numVertices; j++) {
+            rede1->fluxo[i][j] = 0;
+        }
+    }
+    
+    printf("\n" + "=".repeat(50) + "\n");
+    printf("Executando Edmonds-Karp na mesma rede...\n");
+    int fluxoMaximo2 = edmondsKarp(rede1, 0, 5);
+    printf("Fluxo máximo encontrado: %d\n", fluxoMaximo2);
+    
+    // Exemplo 2: Rede com gargalo
+    printf("\n\n=== EXEMPLO 2: Rede com Gargalo ===\n");
+    RedeFluxo* rede2 = criarRedeFluxo(4);
+    
+    adicionarAresta(rede2, 0, 1, 20);
+    adicionarAresta(rede2, 0, 2, 20);
+    adicionarAresta(rede2, 1, 3, 20);
+    adicionarAresta(rede2, 2, 3, 20);
+    adicionarAresta(rede2, 1, 2, 1);  // Gargalo
+    
+    printf("Executando Edmonds-Karp...\n");
+    int fluxoMaximo3 = edmondsKarp(rede2, 0, 3);
+    printf("Fluxo máximo encontrado: %d\n", fluxoMaximo3);
+    
+    imprimirFluxos(rede2);
+    encontrarCorteMinimo(rede2, 0);
+    
+    free(rede1);
+    free(rede2);
+    
+    return 0;
+}
+```
+
+## Complexidade dos Algoritmos
+
+### Ford-Fulkerson:
+- **Complexidade:** O(E × f), onde E é o número de arestas e f é o fluxo máximo
+- **Problema:** Pode ser lento se as capacidades forem muito grandes
+- **Vantagem:** Simples de implementar
+
+### Edmonds-Karp:
+- **Complexidade:** O(V × E²), onde V é o número de vértices e E é o número de arestas
+- **Vantagem:** Complexidade polinomial garantida
+- **Diferença:** Usa BFS para encontrar o caminho mais curto
+
+## Aplicações Práticas
+
+### 1. Redes de Transporte
+- Determinação da capacidade máxima de tráfego entre duas cidades
+- Otimização de rotas de entrega
+
+### 2. Redes de Comunicação
+- Maximização do throughput em redes de computadores
+- Balanceamento de carga em servidores
+
+### 3. Problemas de Atribuição
+- Casamento bipartido máximo
+- Atribuição de recursos limitados
+
+### 4. Sistemas de Distribuição
+- Redes de abastecimento de água
+- Distribuição de energia elétrica
+
+### 5. Problemas de Corte
+- Segmentação de imagens
+- Análise de confiabilidade de redes

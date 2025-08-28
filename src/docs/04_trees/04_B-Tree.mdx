@@ -1,0 +1,581 @@
+---
+id: arvore-b
+title: Árvore B
+slug: arvore-b
+category: Árvores
+description: Aprenda sobre árvores B, estrutura otimizada para armazenamento em disco e suas operações (inserção, remoção e divisão de nós).
+order: 4
+---
+
+# Árvores B
+
+Aprenda sobre árvores B, estrutura otimizada para armazenamento em disco e suas operações (inserção, remoção e divisão de nós).
+
+## Definição
+
+Uma árvore B é uma estrutura de dados em árvore auto-balanceada que mantém dados ordenados e permite buscas, inserções e remoções em tempo logarítmico. Diferentemente de árvores binárias, os nós de uma árvore B podem ter múltiplos filhos e múltiplas chaves.
+
+As árvores B são especialmente otimizadas para sistemas que leem e escrevem grandes blocos de dados, como bancos de dados e sistemas de arquivos, pois minimizam o número de acessos ao disco.
+
+### Propriedades de uma Árvore B de ordem m:
+- Todos os nós folha estão no mesmo nível
+- Cada nó pode conter no máximo m-1 chaves e m filhos
+- Cada nó (exceto a raiz) deve conter pelo menos ⌈m/2⌉-1 chaves
+- A raiz deve ter pelo menos 1 chave (se não for folha)
+- Todas as chaves em um nó são mantidas em ordem crescente
+
+Abaixo temos um bloco de código em C que implementa uma árvore B completa:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define ORDEM_MINIMA 3  // Ordem mínima da árvore B
+#define MAXIMO_CHAVES (2 * ORDEM_MINIMA - 1)
+#define MINIMO_CHAVES (ORDEM_MINIMA - 1)
+
+// Estrutura de um nó da árvore B
+typedef struct NoB {
+    int chaves[MAXIMO_CHAVES];        // Array de chaves
+    struct NoB* filhos[MAXIMO_CHAVES + 1]; // Array de ponteiros para filhos
+    int numChaves;                    // Número atual de chaves
+    bool ehFolha;                     // Verdadeiro se o nó é folha
+} NoB;
+
+// Função para criar um novo nó
+NoB* criarNo(bool ehFolha) {
+    NoB* novoNo = (NoB*)malloc(sizeof(NoB));
+    novoNo->ehFolha = ehFolha;
+    novoNo->numChaves = 0;
+    
+    // Inicializar todos os filhos como NULL
+    for (int i = 0; i <= MAXIMO_CHAVES; i++) {
+        novoNo->filhos[i] = NULL;
+    }
+    
+    return novoNo;
+}
+
+// Função para percorrer a árvore B
+void percorrer(NoB* no) {
+    if (no != NULL) {
+        int i;
+        
+        // Percorrer as primeiras numChaves chaves e filhos
+        for (i = 0; i < no->numChaves; i++) {
+            // Se não é folha, percorrer o filho antes da chave
+            if (!no->ehFolha)
+                percorrer(no->filhos[i]);
+            
+            printf("%d ", no->chaves[i]);
+        }
+        
+        // Percorrer o último filho
+        if (!no->ehFolha)
+            percorrer(no->filhos[i]);
+    }
+}
+
+// Função para buscar uma chave na árvore B
+NoB* buscar(NoB* no, int chave) {
+    int i = 0;
+    
+    // Encontrar a primeira chave maior ou igual à chave buscada
+    while (i < no->numChaves && chave > no->chaves[i])
+        i++;
+    
+    // Se a chave foi encontrada
+    if (i < no->numChaves && chave == no->chaves[i])
+        return no;
+    
+    // Se é uma folha, a chave não está na árvore
+    if (no->ehFolha)
+        return NULL;
+    
+    // Ir para o filho apropriado
+    return buscar(no->filhos[i], chave);
+}
+
+// Função para dividir um nó filho quando está cheio
+void dividirFilho(NoB* pai, int indice) {
+    NoB* filhoCompleto = pai->filhos[indice];
+    NoB* novoNo = criarNo(filhoCompleto->ehFolha);
+    
+    // O novo nó terá MINIMO_CHAVES chaves
+    novoNo->numChaves = MINIMO_CHAVES;
+    
+    // Copiar as últimas MINIMO_CHAVES chaves do filho completo para o novo nó
+    for (int j = 0; j < MINIMO_CHAVES; j++)
+        novoNo->chaves[j] = filhoCompleto->chaves[j + ORDEM_MINIMA];
+    
+    // Copiar os últimos ORDEM_MINIMA filhos do filho completo para o novo nó
+    if (!filhoCompleto->ehFolha) {
+        for (int j = 0; j < ORDEM_MINIMA; j++)
+            novoNo->filhos[j] = filhoCompleto->filhos[j + ORDEM_MINIMA];
+    }
+    
+    // Reduzir o número de chaves no filho original
+    filhoCompleto->numChaves = MINIMO_CHAVES;
+    
+    // Mover os filhos do pai para abrir espaço para o novo filho
+    for (int j = pai->numChaves; j >= indice + 1; j--)
+        pai->filhos[j + 1] = pai->filhos[j];
+    
+    // Ligar o novo filho ao pai
+    pai->filhos[indice + 1] = novoNo;
+    
+    // Mover as chaves do pai para abrir espaço para a nova chave
+    for (int j = pai->numChaves - 1; j >= indice; j--)
+        pai->chaves[j + 1] = pai->chaves[j];
+    
+    // Copiar a chave do meio do filho completo para o pai
+    pai->chaves[indice] = filhoCompleto->chaves[MINIMO_CHAVES];
+    
+    // Incrementar o número de chaves no pai
+    pai->numChaves++;
+}
+
+// Função auxiliar para inserir em um nó que não está cheio
+void inserirNaoCheio(NoB* no, int chave) {
+    int i = no->numChaves - 1;
+    
+    if (no->ehFolha) {
+        // Se é uma folha, inserir a chave diretamente
+        while (i >= 0 && no->chaves[i] > chave) {
+            no->chaves[i + 1] = no->chaves[i];
+            i--;
+        }
+        
+        no->chaves[i + 1] = chave;
+        no->numChaves++;
+    } else {
+        // Se não é uma folha, encontrar o filho onde a nova chave deve ser inserida
+        while (i >= 0 && no->chaves[i] > chave)
+            i--;
+        
+        // Ver se o filho encontrado está cheio
+        if (no->filhos[i + 1]->numChaves == MAXIMO_CHAVES) {
+            // Se o filho está cheio, dividi-lo
+            dividirFilho(no, i + 1);
+            
+            // Após a divisão, a chave do meio do filho sobe.
+            // Decidir qual dos dois filhos vai receber a nova chave
+            if (no->chaves[i + 1] < chave)
+                i++;
+        }
+        
+        inserirNaoCheio(no->filhos[i + 1], chave);
+    }
+}
+
+// Função principal para inserir uma nova chave na árvore B
+NoB* inserir(NoB* raiz, int chave) {
+    // Se a raiz está cheia, a árvore cresce em altura
+    if (raiz->numChaves == MAXIMO_CHAVES) {
+        NoB* novaRaiz = criarNo(false);
+        
+        // Tornar a antiga raiz filha da nova raiz
+        novaRaiz->filhos[0] = raiz;
+        
+        // Dividir a antiga raiz e mover uma chave para a nova raiz
+        dividirFilho(novaRaiz, 0);
+        
+        // A nova raiz tem duas crianças agora. Decidir qual vai receber a nova chave
+        int i = 0;
+        if (novaRaiz->chaves[0] < chave)
+            i++;
+        inserirNaoCheio(novaRaiz->filhos[i], chave);
+        
+        return novaRaiz;
+    } else {
+        // Se a raiz não está cheia, chamar inserirNaoCheio para a raiz
+        inserirNaoCheio(raiz, chave);
+        return raiz;
+    }
+}
+
+// Função para encontrar a chave predecessora
+int obterPredecessor(NoB* no, int indice) {
+    // Mover para o filho mais à direita até encontrar uma folha
+    NoB* atual = no->filhos[indice];
+    while (!atual->ehFolha)
+        atual = atual->filhos[atual->numChaves];
+    
+    // Retornar a última chave da folha
+    return atual->chaves[atual->numChaves - 1];
+}
+
+// Função para encontrar a chave sucessora
+int obterSucessor(NoB* no, int indice) {
+    // Mover para o filho mais à esquerda até encontrar uma folha
+    NoB* atual = no->filhos[indice + 1];
+    while (!atual->ehFolha)
+        atual = atual->filhos[0];
+    
+    // Retornar a primeira chave da folha
+    return atual->chaves[0];
+}
+
+// Função para pegar uma chave emprestada do irmão anterior
+void pegarEmprestadoAnterior(NoB* no, int indice) {
+    NoB* filho = no->filhos[indice];
+    NoB* irmao = no->filhos[indice - 1];
+    
+    // Mover todas as chaves do filho uma posição à frente
+    for (int i = filho->numChaves - 1; i >= 0; --i)
+        filho->chaves[i + 1] = filho->chaves[i];
+    
+    // Se não é folha, mover todos os ponteiros dos filhos uma posição à frente
+    if (!filho->ehFolha) {
+        for (int i = filho->numChaves; i >= 0; --i)
+            filho->filhos[i + 1] = filho->filhos[i];
+    }
+    
+    // A primeira chave do filho se torna igual à chave do pai no índice-1
+    filho->chaves[0] = no->chaves[indice - 1];
+    
+    // Se não é folha, o último ponteiro do irmão se torna o primeiro ponteiro do filho
+    if (!filho->ehFolha)
+        filho->filhos[0] = irmao->filhos[irmao->numChaves];
+    
+    // Mover a chave do irmão para o pai e mover a chave do pai para o filho
+    no->chaves[indice - 1] = irmao->chaves[irmao->numChaves - 1];
+    
+    filho->numChaves += 1;
+    irmao->numChaves -= 1;
+}
+
+// Função para pegar uma chave emprestada do próximo irmão
+void pegarEmprestadoProximo(NoB* no, int indice) {
+    NoB* filho = no->filhos[indice];
+    NoB* irmao = no->filhos[indice + 1];
+    
+    // A chave do pai é inserida como a última chave no filho
+    filho->chaves[filho->numChaves] = no->chaves[indice];
+    
+    // Se não é folha, o primeiro ponteiro do irmão é inserido como o último ponteiro no filho
+    if (!filho->ehFolha)
+        filho->filhos[filho->numChaves + 1] = irmao->filhos[0];
+    
+    // A primeira chave do irmão é inserida no pai
+    no->chaves[indice] = irmao->chaves[0];
+    
+    // Mover todas as chaves do irmão uma posição para trás
+    for (int i = 1; i < irmao->numChaves; ++i)
+        irmao->chaves[i - 1] = irmao->chaves[i];
+    
+    // Mover todos os ponteiros dos filhos uma posição para trás
+    if (!irmao->ehFolha) {
+        for (int i = 1; i <= irmao->numChaves; ++i)
+            irmao->filhos[i - 1] = irmao->filhos[i];
+    }
+    
+    filho->numChaves += 1;
+    irmao->numChaves -= 1;
+}
+
+// Função para mesclar um filho com seu irmão
+void mesclar(NoB* no, int indice) {
+    NoB* filho = no->filhos[indice];
+    NoB* irmao = no->filhos[indice + 1];
+    
+    // Puxar uma chave do nó atual e inseri-la no MINIMO_CHAVES-ésimo
+    // posição do filho
+    filho->chaves[MINIMO_CHAVES] = no->chaves[indice];
+    
+    // Copiar chaves do irmão para o filho
+    for (int i = 0; i < irmao->numChaves; ++i)
+        filho->chaves[i + ORDEM_MINIMA] = irmao->chaves[i];
+    
+    // Copiar os ponteiros dos filhos do irmão para o filho
+    if (!filho->ehFolha) {
+        for (int i = 0; i <= irmao->numChaves; ++i)
+            filho->filhos[i + ORDEM_MINIMA] = irmao->filhos[i];
+    }
+    
+    // Mover todas as chaves após o índice no nó atual uma posição antes
+    for (int i = indice + 1; i < no->numChaves; ++i)
+        no->chaves[i - 1] = no->chaves[i];
+    
+    // Mover os ponteiros dos filhos após (índice+1) no nó atual uma posição antes
+    for (int i = indice + 2; i <= no->numChaves; ++i)
+        no->filhos[i - 1] = no->filhos[i];
+    
+    // Atualizar a contagem de chaves do filho e do nó atual
+    filho->numChaves += irmao->numChaves + 1;
+    no->numChaves--;
+    
+    // Liberar memória ocupada pelo irmão
+    free(irmao);
+}
+
+// Função para imprimir a estrutura da árvore (para debug)
+void imprimirEstrutura(NoB* no, int nivel) {
+    if (no != NULL) {
+        printf("Nível %d: ", nivel);
+        for (int i = 0; i < no->numChaves; i++) {
+            printf("%d ", no->chaves[i]);
+        }
+        printf("(Folha: %s)\n", no->ehFolha ? "Sim" : "Não");
+        
+        if (!no->ehFolha) {
+            for (int i = 0; i <= no->numChaves; i++) {
+                imprimirEstrutura(no->filhos[i], nivel + 1);
+            }
+        }
+    }
+}
+
+// Função para contar o número total de nós
+int contarNos(NoB* no) {
+    if (no == NULL) return 0;
+    
+    int count = 1;
+    if (!no->ehFolha) {
+        for (int i = 0; i <= no->numChaves; i++)
+            count += contarNos(no->filhos[i]);
+    }
+    return count;
+}
+
+// Função auxiliar para remoção - verifica se um filho tem chaves suficientes
+void preencherFilho(NoB* no, int indice) {
+    // Se o filho anterior tem mais que o mínimo de chaves, pegar uma emprestada dele
+    if (indice != 0 && no->filhos[indice - 1]->numChaves >= ORDEM_MINIMA)
+        pegarEmprestadoAnterior(no, indice);
+    
+    // Se o próximo irmão tem mais que o mínimo de chaves, pegar uma emprestada dele
+    else if (indice != no->numChaves && no->filhos[indice + 1]->numChaves >= ORDEM_MINIMA)
+        pegarEmprestadoProximo(no, indice);
+    
+    // Mesclar o filho com seu irmão
+    else {
+        if (indice != no->numChaves)
+            mesclar(no, indice);
+        else
+            mesclar(no, indice - 1);
+    }
+}
+
+// Função para remover uma chave de uma folha
+void removerDaFolha(NoB* no, int indice) {
+    // Mover todas as chaves após o índice uma posição para trás
+    for (int i = indice + 1; i < no->numChaves; ++i)
+        no->chaves[i - 1] = no->chaves[i];
+    
+    // Reduzir a contagem de chaves
+    no->numChaves--;
+}
+
+// Função para remover uma chave de um nó não-folha
+void removerDeNaoFolha(NoB* no, int indice) {
+    int chave = no->chaves[indice];
+    
+    // Se o filho que precede a chave (filhos[indice]) tem pelo menos ORDEM_MINIMA chaves,
+    // encontrar o predecessor de chave na subárvore com raiz filhos[indice].
+    // Substituir chave por predecessor. Recursivamente remover predecessor de filhos[indice]
+    if (no->filhos[indice]->numChaves >= ORDEM_MINIMA) {
+        int predecessor = obterPredecessor(no, indice);
+        no->chaves[indice] = predecessor;
+        removerAux(no->filhos[indice], predecessor);
+    }
+    
+    // Se o filho filhos[indice] tem menos que ORDEM_MINIMA chaves, examinar filhos[indice+1].
+    // Se filhos[indice+1] tem pelo menos ORDEM_MINIMA chaves, encontrar o sucessor de chave na
+    // subárvore com raiz filhos[indice+1]
+    else if (no->filhos[indice + 1]->numChaves >= ORDEM_MINIMA) {
+        int sucessor = obterSucessor(no, indice);
+        no->chaves[indice] = sucessor;
+        removerAux(no->filhos[indice + 1], sucessor);
+    }
+    
+    // Se tanto filhos[indice] quanto filhos[indice+1] têm apenas ORDEM_MINIMA-1 chaves,
+    // mesclar chave e todo filhos[indice+1] em filhos[indice]
+    else {
+        mesclar(no, indice);
+        removerAux(no->filhos[indice], chave);
+    }
+}
+
+// Função auxiliar para remoção
+void removerAux(NoB* no, int chave) {
+    int indice = 0;
+    while (indice < no->numChaves && no->chaves[indice] < chave)
+        ++indice;
+    
+    // A chave a ser removida está presente neste nó
+    if (indice < no->numChaves && no->chaves[indice] == chave) {
+        if (no->ehFolha)
+            removerDaFolha(no, indice);
+        else
+            removerDeNaoFolha(no, indice);
+    }
+    else {
+        // Se este nó é uma folha, então a chave não está presente na árvore
+        if (no->ehFolha) {
+            printf("A chave %d não está presente na árvore\n", chave);
+            return;
+        }
+        
+        // A chave a ser removida está presente na subárvore com raiz neste filho
+        bool flag = (indice == no->numChaves);
+        
+        // Se o filho onde a chave supostamente existe tem menos que ORDEM_MINIMA chaves,
+        // preenchê-lo primeiro
+        if (no->filhos[indice]->numChaves < ORDEM_MINIMA)
+            preencherFilho(no, indice);
+        
+        // O filho poderia ter sido mesclado, neste caso devemos encontrar a nova localização da chave
+        if (flag && indice > no->numChaves)
+            removerAux(no->filhos[indice - 1], chave);
+        else
+            removerAux(no->filhos[indice], chave);
+    }
+}
+
+// Função principal para remover uma chave da árvore B
+NoB* remover(NoB* raiz, int chave) {
+    removerAux(raiz, chave);
+    
+    // Se o nó raiz tinha apenas 1 chave e agora está vazio, tornar seu primeiro filho a nova raiz
+    // se tem um filho, caso contrário definir raiz como NULL
+    if (raiz->numChaves == 0) {
+        NoB* temp = raiz;
+        if (raiz->ehFolha)
+            raiz = NULL;
+        else
+            raiz = raiz->filhos[0];
+        
+// Função principal para demonstrar o funcionamento da árvore B
+int main() {
+    NoB* raiz = NULL;
+    raiz = criarNo(true); // Criar raiz como folha
+
+    printf("=== Demonstração da Árvore B (Ordem Mínima = %d) ===\n\n", ORDEM_MINIMA);
+
+    // Inserindo elementos
+    int valores[] = {10, 20, 5, 6, 12, 30, 7, 17, 15, 18, 22, 8, 19};
+    int numValores = sizeof(valores) / sizeof(valores[0]);
+
+    printf("Inserindo valores: ");
+    for (int i = 0; i < numValores; i++) {
+        printf("%d ", valores[i]);
+        raiz = inserir(raiz, valores[i]);
+    }
+    printf("\n\n");
+
+    printf("Árvore B em ordem: ");
+    percorrer(raiz);
+    printf("\n\n");
+
+    printf("Estrutura da árvore:\n");
+    imprimirEstrutura(raiz, 0);
+    printf("\n");
+
+    printf("Número total de nós: %d\n\n", contarNos(raiz));
+
+    // Testando busca
+    int chaveBusca = 15;
+    printf("Buscando a chave %d: ", chaveBusca);
+    NoB* resultado = buscar(raiz, chaveBusca);
+    if (resultado != NULL)
+        printf("Encontrada!\n");
+    else
+        printf("Não encontrada!\n");
+
+    // Buscando chave que não existe
+    chaveBusca = 25;
+    printf("Buscando a chave %d: ", chaveBusca);
+    resultado = buscar(raiz, chaveBusca);
+    if (resultado != NULL)
+        printf("Encontrada!\n");
+    else
+        printf("Não encontrada!\n\n");
+
+    // Removendo algumas chaves
+    printf("Removendo a chave 6:\n");
+    raiz = remover(raiz, 6);
+    printf("Árvore após remoção: ");
+    percorrer(raiz);
+    printf("\n\n");
+
+    printf("Removendo a chave 10:\n");
+    raiz = remover(raiz, 10);
+    printf("Árvore após remoção: ");
+    percorrer(raiz);
+    printf("\n\n");
+
+    printf("Estrutura final da árvore:\n");
+    imprimirEstrutura(raiz, 0);
+
+    return 0;
+}
+```
+
+## Características das Árvores B
+
+### Vantagens:
+- **Otimização para disco:** Minimizam o número de acessos ao disco ao armazenar múltiplas chaves por nó
+- **Balanceamento automático:** Mantêm-se sempre balanceadas, garantindo performance consistente
+- **Eficiência em espaço:** Alta utilização do espaço de armazenamento
+- **Escalabilidade:** Adequadas para grandes volumes de dados
+
+### Complexidades:
+- **Busca:** O(log n)
+- **Inserção:** O(log n)
+- **Remoção:** O(log n)
+- **Espaço:** O(n)
+
+## Operações Fundamentais
+
+### 1. Inserção
+A inserção em árvores B segue os seguintes passos:
+- Encontrar a folha apropriada para inserção
+- Se a folha não está cheia, inserir diretamente
+- Se a folha está cheia, dividir o nó e promover a chave do meio
+
+### 2. Remoção
+A remoção é mais complexa e envolve três casos:
+- **Remoção de folha:** Remover diretamente se possível
+- **Remoção de nó interno:** Substituir por predecessor ou sucessor
+- **Balanceamento:** Emprestar chaves ou mesclar nós conforme necessário
+
+### 3. Divisão de Nós
+Quando um nó excede o número máximo de chaves:
+- Dividir o nó em dois
+- Promover a chave do meio para o nó pai
+- Se o pai também ficar cheio, propagar a divisão
+
+## Exemplos de contexto de uso:
+
+### Em que situações as árvores B são utilizadas?
+
+1. **Sistemas de banco de dados:**
+   - Praticamente todos os SGBDs modernos (MySQL, PostgreSQL, Oracle) utilizam árvores B ou B+ para índices, pois otimizam o acesso sequencial ao disco.
+
+2. **Sistemas de arquivos:**
+   - Sistemas como NTFS, HFS+, e ext4 utilizam variantes de árvores B para organizar metadados de arquivos e diretórios.
+
+3. **Armazenamento em SSD/HDD:**
+   - Estruturas otimizadas para minimizar operações de I/O, aproveitando melhor a largura de banda de dispositivos de armazenamento.
+
+4. **Bibliotecas de indexação:**
+   - Mecanismos de busca e bibliotecas de indexação utilizam árvores B para organizar índices de documentos e permitir buscas eficientes.
+
+5. **Sistemas distribuídos:**
+   - Utilizadas em sistemas de armazenamento distribuído onde é crucial minimizar a latência de rede e o número de operações remotas.
+
+## Variações das Árvores B
+
+### Árvore B+
+- Todas as chaves são armazenadas nas folhas
+- Nós internos servem apenas como índices
+- Folhas são conectadas em lista ligada para acesso sequencial eficiente
+
+### Árvore B*
+- Atrasa a divisão de nós redistribuindo chaves entre irmãos
+- Maior utilização de espaço (aproximadamente 2/3 ao invés de 1/2)
+- Menos divisões de nós, melhor performance
+
+A escolha da variação depende dos requisitos específicos da aplicação, como padrão de acesso aos dados e restrições de espaço.

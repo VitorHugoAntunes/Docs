@@ -1,0 +1,625 @@
+---
+id: caminhos-minimos
+title: Algoritmos de Caminho Mínimo
+slug: caminhos-minimos
+category: Grafos
+description: Aprenda sobre algoritmos de caminho mínimo - Dijkstra para pesos não-negativos e Bellman-Ford para detecção de ciclos negativos.
+order: 3
+---
+
+# Algoritmos de Caminho Mínimo
+
+Aprenda sobre algoritmos de caminho mínimo: Dijkstra para pesos não-negativos e Bellman-Ford para detecção de ciclos negativos.
+
+## Definição
+
+Os algoritmos de caminho mínimo encontram o caminho de menor custo entre vértices em um grafo ponderado. Estes algoritmos são fundamentais em diversas aplicações como roteamento de redes, sistemas de navegação e otimização de recursos.
+
+### Tipos de problemas:
+- **Fonte única:** Encontrar caminhos mínimos de um vértice para todos os outros
+- **Todos os pares:** Encontrar caminhos mínimos entre todos os pares de vértices
+- **Caminho único:** Encontrar o caminho mínimo entre dois vértices específicos
+
+Abaixo implementamos os algoritmos de Dijkstra e Bellman-Ford:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <stdbool.h>
+
+#define MAX_VERTICES 100
+#define INFINITO INT_MAX
+
+// Estrutura para representar uma aresta
+typedef struct Aresta {
+    int destino;
+    int peso;
+    struct Aresta* proxima;
+} Aresta;
+
+// Estrutura para representar um vértice
+typedef struct Vertice {
+    int valor;
+    Aresta* adjacentes;
+} Vertice;
+
+// Estrutura do grafo ponderado
+typedef struct GrafoPonderado {
+    Vertice vertices[MAX_VERTICES];
+    int numVertices;
+    bool direcionado;
+} GrafoPonderado;
+
+// Estrutura para fila de prioridade (heap mínimo)
+typedef struct {
+    int vertice;
+    int distancia;
+} ItemHeap;
+
+typedef struct {
+    ItemHeap itens[MAX_VERTICES];
+    int tamanho;
+} HeapMinimo;
+
+// Funções auxiliares para o heap
+void trocarItens(ItemHeap* a, ItemHeap* b) {
+    ItemHeap temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void heapifyUp(HeapMinimo* heap, int indice) {
+    if (indice == 0) return;
+    
+    int pai = (indice - 1) / 2;
+    if (heap->itens[indice].distancia < heap->itens[pai].distancia) {
+        trocarItens(&heap->itens[indice], &heap->itens[pai]);
+        heapifyUp(heap, pai);
+    }
+}
+
+void heapifyDown(HeapMinimo* heap, int indice) {
+    int menor = indice;
+    int esquerda = 2 * indice + 1;
+    int direita = 2 * indice + 2;
+    
+    if (esquerda < heap->tamanho && 
+        heap->itens[esquerda].distancia < heap->itens[menor].distancia) {
+        menor = esquerda;
+    }
+    
+    if (direita < heap->tamanho && 
+        heap->itens[direita].distancia < heap->itens[menor].distancia) {
+        menor = direita;
+    }
+    
+    if (menor != indice) {
+        trocarItens(&heap->itens[indice], &heap->itens[menor]);
+        heapifyDown(heap, menor);
+    }
+}
+
+void inserirHeap(HeapMinimo* heap, int vertice, int distancia) {
+    heap->itens[heap->tamanho].vertice = vertice;
+    heap->itens[heap->tamanho].distancia = distancia;
+    heapifyUp(heap, heap->tamanho);
+    heap->tamanho++;
+}
+
+ItemHeap extrairMinimo(HeapMinimo* heap) {
+    ItemHeap minimo = heap->itens[0];
+    heap->tamanho--;
+    heap->itens[0] = heap->itens[heap->tamanho];
+    heapifyDown(heap, 0);
+    return minimo;
+}
+
+bool heapVazio(HeapMinimo* heap) {
+    return heap->tamanho == 0;
+}
+
+// Função para criar um grafo (reutilizada do arquivo anterior)
+GrafoPonderado* criarGrafo(int numVertices, bool direcionado) {
+    GrafoPonderado* grafo = (GrafoPonderado*)malloc(sizeof(GrafoPonderado));
+    grafo->numVertices = numVertices;
+    grafo->direcionado = direcionado;
+    
+    for (int i = 0; i < numVertices; i++) {
+        grafo->vertices[i].valor = i;
+        grafo->vertices[i].adjacentes = NULL;
+    }
+    
+    return grafo;
+}
+
+void adicionarAresta(GrafoPonderado* grafo, int origem, int destino, int peso) {
+    Aresta* novaAresta = (Aresta*)malloc(sizeof(Aresta));
+    novaAresta->destino = destino;
+    novaAresta->peso = peso;
+    novaAresta->proxima = grafo->vertices[origem].adjacentes;
+    grafo->vertices[origem].adjacentes = novaAresta;
+    
+    if (!grafo->direcionado) {
+        Aresta* arestaReversa = (Aresta*)malloc(sizeof(Aresta));
+        arestaReversa->destino = origem;
+        arestaReversa->peso = peso;
+        arestaReversa->proxima = grafo->vertices[destino].adjacentes;
+        grafo->vertices[destino].adjacentes = arestaReversa;
+    }
+}
+
+// ==================== ALGORITMO DE DIJKSTRA ====================
+
+void dijkstra(GrafoPonderado* grafo, int origem, int distancias[], int predecessores[]) {
+    HeapMinimo heap;
+    heap.tamanho = 0;
+    bool visitados[MAX_VERTICES] = {false};
+    
+    // Inicializar distâncias
+    for (int i = 0; i < grafo->numVertices; i++) {
+        distancias[i] = INFINITO;
+        predecessores[i] = -1;
+    }
+    
+    distancias[origem] = 0;
+    inserirHeap(&heap, origem, 0);
+    
+    printf("=== Executando Algoritmo de Dijkstra ===\n");
+    printf("Origem: %d\n\n", origem);
+    
+    while (!heapVazio(&heap)) {
+        ItemHeap atual = extrairMinimo(&heap);
+        int u = atual.vertice;
+        
+        if (visitados[u]) continue;
+        visitados[u] = true;
+        
+        printf("Processando vértice %d (distância: %d)\n", u, distancias[u]);
+        
+        // Explorar todos os vizinhos de u
+        Aresta* aresta = grafo->vertices[u].adjacentes;
+        while (aresta != NULL) {
+            int v = aresta->destino;
+            int peso = aresta->peso;
+            
+            // Relaxamento da aresta
+            if (!visitados[v] && distancias[u] != INFINITO && 
+                distancias[u] + peso < distancias[v]) {
+                
+                int novaDistancia = distancias[u] + peso;
+                printf("  Relaxando aresta (%d,%d): %d -> %d\n", 
+                       u, v, distancias[v], novaDistancia);
+                
+                distancias[v] = novaDistancia;
+                predecessores[v] = u;
+                inserirHeap(&heap, v, novaDistancia);
+            }
+            
+            aresta = aresta->proxima;
+        }
+        printf("\n");
+    }
+}
+
+void imprimirCaminhoMinimo(int origem, int destino, int predecessores[]) {
+    if (predecessores[destino] == -1) {
+        printf("Não há caminho de %d para %d\n", origem, destino);
+        return;
+    }
+    
+    printf("Caminho mínimo de %d para %d: ", origem, destino);
+    
+    // Construir o caminho recursivamente
+    int caminho[MAX_VERTICES];
+    int tamanho = 0;
+    int atual = destino;
+    
+    while (atual != -1) {
+        caminho[tamanho++] = atual;
+        atual = predecessores[atual];
+    }
+    
+    // Imprimir o caminho na ordem correta
+    for (int i = tamanho - 1; i >= 0; i--) {
+        printf("%d", caminho[i]);
+        if (i > 0) printf(" -> ");
+    }
+    printf("\n");
+}
+
+void imprimirResultadosDijkstra(GrafoPonderado* grafo, int origem, 
+                                int distancias[], int predecessores[]) {
+    printf("=== Resultados do Algoritmo de Dijkstra ===\n");
+    printf("Distâncias mínimas a partir do vértice %d:\n", origem);
+    
+    for (int i = 0; i < grafo->numVertices; i++) {
+        printf("Vértice %d: ", i);
+        if (distancias[i] == INFINITO) {
+            printf("INFINITO (não alcançável)\n");
+        } else {
+            printf("distância = %d, ", distancias[i]);
+            imprimirCaminhoMinimo(origem, i, predecessores);
+        }
+    }
+    printf("\n");
+}
+
+// ==================== ALGORITMO DE BELLMAN-FORD ====================
+
+bool bellmanFord(GrafoPonderado* grafo, int origem, int distancias[], int predecessores[]) {
+    // Inicializar distâncias
+    for (int i = 0; i < grafo->numVertices; i++) {
+        distancias[i] = INFINITO;
+        predecessores[i] = -1;
+    }
+    
+    distancias[origem] = 0;
+    
+    printf("=== Executando Algoritmo de Bellman-Ford ===\n");
+    printf("Origem: %d\n\n", origem);
+    
+    // Relaxar todas as arestas |V| - 1 vezes
+    for (int i = 0; i < grafo->numVertices - 1; i++) {
+        printf("Iteração %d:\n", i + 1);
+        bool houveRelaxamento = false;
+        
+        for (int u = 0; u < grafo->numVertices; u++) {
+            if (distancias[u] == INFINITO) continue;
+            
+            Aresta* aresta = grafo->vertices[u].adjacentes;
+            while (aresta != NULL) {
+                int v = aresta->destino;
+                int peso = aresta->peso;
+                
+                // Relaxamento da aresta
+                if (distancias[u] + peso < distancias[v]) {
+                    printf("  Relaxando aresta (%d,%d): %d -> %d\n", 
+                           u, v, distancias[v], distancias[u] + peso);
+                    
+                    distancias[v] = distancias[u] + peso;
+                    predecessores[v] = u;
+                    houveRelaxamento = true;
+                }
+                
+                aresta = aresta->proxima;
+            }
+        }
+        
+        if (!houveRelaxamento) {
+            printf("  Nenhum relaxamento necessário. Algoritmo converge.\n");
+            break;
+        }
+        printf("\n");
+    }
+    
+    // Verificar ciclos negativos
+    printf("Verificando ciclos negativos:\n");
+    for (int u = 0; u < grafo->numVertices; u++) {
+        if (distancias[u] == INFINITO) continue;
+        
+        Aresta* aresta = grafo->vertices[u].adjacentes;
+        while (aresta != NULL) {
+            int v = aresta->destino;
+            int peso = aresta->peso;
+            
+            if (distancias[u] + peso < distancias[v]) {
+                printf("Ciclo negativo detectado na aresta (%d,%d)\n", u, v);
+                return false; // Ciclo negativo encontrado
+            }
+            
+            aresta = aresta->proxima;
+        }
+    }
+    
+    printf("Nenhum ciclo negativo detectado.\n\n");
+    return true; // Sem ciclos negativos
+}
+
+void imprimirResultadosBellmanFord(GrafoPonderado* grafo, int origem, 
+                                   int distancias[], int predecessores[], bool semCicloNegativo) {
+    printf("=== Resultados do Algoritmo de Bellman-Ford ===\n");
+    
+    if (!semCicloNegativo) {
+        printf("ATENÇÃO: Ciclo negativo detectado! As distâncias podem não ser válidas.\n\n");
+    }
+    
+    printf("Distâncias mínimas a partir do vértice %d:\n", origem);
+    
+    for (int i = 0; i < grafo->numVertices; i++) {
+        printf("Vértice %d: ", i);
+        if (distancias[i] == INFINITO) {
+            printf("INFINITO (não alcançável)\n");
+        } else {
+            printf("distância = %d, ", distancias[i]);
+            imprimirCaminhoMinimo(origem, i, predecessores);
+        }
+    }
+    printf("\n");
+}
+
+// ==================== ALGORITMO DE FLOYD-WARSHALL ====================
+
+void floydWarshall(GrafoPonderado* grafo, int distancias[][MAX_VERTICES]) {
+    // Inicializar matriz de distâncias
+    for (int i = 0; i < grafo->numVertices; i++) {
+        for (int j = 0; j < grafo->numVertices; j++) {
+            if (i == j) {
+                distancias[i][j] = 0;
+            } else {
+                distancias[i][j] = INFINITO;
+            }
+        }
+    }
+    
+    // Preencher com as arestas existentes
+    for (int u = 0; u < grafo->numVertices; u++) {
+        Aresta* aresta = grafo->vertices[u].adjacentes;
+        while (aresta != NULL) {
+            distancias[u][aresta->destino] = aresta->peso;
+            aresta = aresta->proxima;
+        }
+    }
+    
+    printf("=== Executando Algoritmo de Floyd-Warshall ===\n");
+    
+    // Algoritmo principal
+    for (int k = 0; k < grafo->numVertices; k++) {
+        printf("Considerando vértice intermediário %d:\n", k);
+        
+        for (int i = 0; i < grafo->numVertices; i++) {
+            for (int j = 0; j < grafo->numVertices; j++) {
+                if (distancias[i][k] != INFINITO && distancias[k][j] != INFINITO &&
+                    distancias[i][k] + distancias[k][j] < distancias[i][j]) {
+                    
+                    printf("  Melhor caminho de %d para %d via %d: %d -> %d\n",
+                           i, j, k, distancias[i][j], distancias[i][k] + distancias[k][j]);
+                    
+                    distancias[i][j] = distancias[i][k] + distancias[k][j];
+                }
+            }
+        }
+        printf("\n");
+    }
+}
+
+void imprimirMatrizDistancias(GrafoPonderado* grafo, int distancias[][MAX_VERTICES]) {
+    printf("=== Matriz de Distâncias Mínimas (Floyd-Warshall) ===\n");
+    printf("     ");
+    
+    // Cabeçalho
+    for (int i = 0; i < grafo->numVertices; i++) {
+        printf("%6d", i);
+    }
+    printf("\n");
+    
+    // Matriz
+    for (int i = 0; i < grafo->numVertices; i++) {
+        printf("%3d: ", i);
+        for (int j = 0; j < grafo->numVertices; j++) {
+            if (distancias[i][j] == INFINITO) {
+                printf("   INF");
+            } else {
+                printf("%6d", distancias[i][j]);
+            }
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+
+// ==================== COMPARAÇÃO DE ALGORITMOS ====================
+
+void compararAlgoritmos(GrafoPonderado* grafo, int origem) {
+    int distanciasDijkstra[MAX_VERTICES];
+    int predecessoresDijkstra[MAX_VERTICES];
+    
+    int distanciasBellman[MAX_VERTICES];
+    int predecessoresBellman[MAX_VERTICES];
+    
+    int distanciasFloyd[MAX_VERTICES][MAX_VERTICES];
+    
+    printf("=== COMPARAÇÃO DE ALGORITMOS ===\n\n");
+    
+    // Executar Dijkstra
+    printf("1. DIJKSTRA:\n");
+    dijkstra(grafo, origem, distanciasDijkstra, predecessoresDijkstra);
+    
+    // Executar Bellman-Ford
+    printf("2. BELLMAN-FORD:\n");
+    bool semCiclo = bellmanFord(grafo, origem, distanciasBellman, predecessoresBellman);
+    
+    // Executar Floyd-Warshall
+    printf("3. FLOYD-WARSHALL:\n");
+    floydWarshall(grafo, distanciasFloyd);
+    
+    // Comparar resultados
+    printf("=== COMPARAÇÃO DOS RESULTADOS ===\n");
+    printf("Vértice | Dijkstra | Bellman-Ford | Floyd-Warshall\n");
+    printf("--------|----------|--------------|---------------\n");
+    
+    for (int i = 0; i < grafo->numVertices; i++) {
+        printf("%7d | ", i);
+        
+        if (distanciasDijkstra[i] == INFINITO) {
+            printf("%8s | ", "INF");
+        } else {
+            printf("%8d | ", distanciasDijkstra[i]);
+        }
+        
+        if (distanciasBellman[i] == INFINITO) {
+            printf("%12s | ", "INF");
+        } else {
+            printf("%12d | ", distanciasBellman[i]);
+        }
+        
+        if (distanciasFloyd[origem][i] == INFINITO) {
+            printf("%14s\n", "INF");
+        } else {
+            printf("%14d\n", distanciasFloyd[origem][i]);
+        }
+    }
+    printf("\n");
+}
+
+// Função para liberar memória do grafo
+void liberarGrafo(GrafoPonderado* grafo) {
+    for (int i = 0; i < grafo->numVertices; i++) {
+        Aresta* atual = grafo->vertices[i].adjacentes;
+        while (atual != NULL) {
+            Aresta* temp = atual;
+            atual = atual->proxima;
+            free(temp);
+        }
+    }
+    free(grafo);
+}
+
+// ==================== FUNÇÃO PRINCIPAL ====================
+
+int main() {
+    printf("=== DEMONSTRAÇÃO DE ALGORITMOS DE CAMINHO MÍNIMO ===\n\n");
+    
+    // Exemplo 1: Grafo sem pesos negativos (ideal para Dijkstra)
+    printf("EXEMPLO 1: Grafo com pesos positivos\n");
+    printf("=====================================\n");
+    
+    GrafoPonderado* grafo1 = criarGrafo(6, true); // Grafo direcionado
+    
+    // Adicionar arestas
+    adicionarAresta(grafo1, 0, 1, 4);
+    adicionarAresta(grafo1, 0, 2, 2);
+    adicionarAresta(grafo1, 1, 2, 1);
+    adicionarAresta(grafo1, 1, 3, 5);
+    adicionarAresta(grafo1, 2, 3, 8);
+    adicionarAresta(grafo1, 2, 4, 10);
+    adicionarAresta(grafo1, 3, 4, 2);
+    adicionarAresta(grafo1, 3, 5, 6);
+    adicionarAresta(grafo1, 4, 5, 3);
+    
+    compararAlgoritmos(grafo1, 0);
+    
+    // Exemplo 2: Grafo com pesos negativos (mas sem ciclo negativo)
+    printf("\nEXEMPLO 2: Grafo com pesos negativos (sem ciclo negativo)\n");
+    printf("========================================================\n");
+    
+    GrafoPonderado* grafo2 = criarGrafo(5, true);
+    
+    adicionarAresta(grafo2, 0, 1, 6);
+    adicionarAresta(grafo2, 0, 2, 7);
+    adicionarAresta(grafo2, 1, 2, 8);
+    adicionarAresta(grafo2, 1, 3, -4);  // Peso negativo
+    adicionarAresta(grafo2, 1, 4, 5);
+    adicionarAresta(grafo2, 2, 3, 9);
+    adicionarAresta(grafo2, 2, 4, -3);  // Peso negativo
+    adicionarAresta(grafo2, 3, 4, 7);
+    adicionarAresta(grafo2, 4, 3, 2);
+    
+    printf("NOTA: Dijkstra não é apropriado para pesos negativos!\n");
+    printf("Executando apenas Bellman-Ford e Floyd-Warshall:\n\n");
+    
+    int distancias[MAX_VERTICES];
+    int predecessores[MAX_VERTICES];
+    int matrizFloyd[MAX_VERTICES][MAX_VERTICES];
+    
+    bool semCiclo = bellmanFord(grafo2, 0, distancias, predecessores);
+    imprimirResultadosBellmanFord(grafo2, 0, distancias, predecessores, semCiclo);
+    
+    floydWarshall(grafo2, matrizFloyd);
+    imprimirMatrizDistancias(grafo2, matrizFloyd);
+    
+    // Exemplo 3: Grafo com ciclo negativo
+    printf("EXEMPLO 3: Grafo com ciclo negativo\n");
+    printf("===================================\n");
+    
+    GrafoPonderado* grafo3 = criarGrafo(4, true);
+    
+    adicionarAresta(grafo3, 0, 1, 1);
+    adicionarAresta(grafo3, 1, 2, -3);
+    adicionarAresta(grafo3, 2, 3, 2);
+    adicionarAresta(grafo3, 3, 1, -1);  // Cria ciclo negativo: 1->2->3->1 = -2
+    
+    bool temCicloNegativo = !bellmanFord(grafo3, 0, distancias, predecessores);
+    imprimirResultadosBellmanFord(grafo3, 0, distancias, predecessores, !temCicloNegativo);
+    
+    // Liberar memória
+    liberarGrafo(grafo1);
+    liberarGrafo(grafo2);
+    liberarGrafo(grafo3);
+    
+    return 0;
+}
+```
+
+## Análise dos Algoritmos
+
+### 1. Algoritmo de Dijkstra
+
+**Características:**
+- **Complexidade:** O((V + E) log V) com heap binário
+- **Restrição:** Funciona apenas com pesos não-negativos
+- **Estratégia:** Algoritmo ganancioso que sempre escolhe o vértice não visitado com menor distância
+
+**Quando usar:**
+- Grafos com pesos não-negativos
+- Quando precisamos de eficiência máxima
+- Problemas de roteamento em redes
+- Sistemas de navegação GPS
+
+### 2. Algoritmo de Bellman-Ford
+
+**Características:**
+- **Complexidade:** O(V × E)
+- **Vantagem:** Funciona com pesos negativos e detecta ciclos negativos
+- **Estratégia:** Relaxa todas as arestas V-1 vezes
+
+**Quando usar:**
+- Grafos que podem ter pesos negativos
+- Quando precisamos detectar ciclos negativos
+- Protocolos de roteamento distribuído
+- Análise de arbitragem financeira
+
+### 3. Algoritmo de Floyd-Warshall
+
+**Características:**
+- **Complexidade:** O(V³)
+- **Funcionalidade:** Encontra caminhos mínimos entre todos os pares
+- **Estratégia:** Programação dinâmica considerando vértices intermediários
+
+**Quando usar:**
+- Quando precisamos de todas as distâncias pares-a-pares
+- Grafos pequenos a médios
+- Análise de conectividade em redes
+- Problemas de transitívidade
+
+## Comparação de Performance
+
+| Algoritmo | Complexidade | Pesos Negativos | Ciclos Negativos | Uso de Memória |
+|-----------|--------------|-----------------|------------------|----------------|
+| Dijkstra | O((V+E) log V) | ❌ Não | ❌ Não detecta | O(V) |
+| Bellman-Ford | O(V×E) | ✅ Sim | ✅ Detecta | O(V) |
+| Floyd-Warshall | O(V³) | ✅ Sim | ✅ Detecta | O(V²) |
+
+## Exemplos de contexto de uso:
+
+### Aplicações práticas dos algoritmos:
+
+1. **Sistemas de Navegação (Dijkstra):**
+   - Google Maps, Waze para encontrar rotas mais rápidas
+   - Otimização de rotas de entrega
+
+2. **Protocolos de Roteamento (Bellman-Ford):**
+   - Protocolo RIP (Routing Information Protocol)
+   - Detecção de loops em redes
+
+3. **Análise de Redes Sociais (Floyd-Warshall):**
+   - Cálculo de distâncias sociais entre usuários
+   - Análise de influência e centralidade
+
+4. **Jogos e IA:**
+   - Pathfinding para NPCs
+   - Algoritmos de movimento inteligente
+
+5. **Análise Financeira:**
+   - Detecção de oportunidades de arbitragem
+   - Análise de risco em portfólios

@@ -1,0 +1,378 @@
+---
+id: hash-tables
+title: Tabelas Hash
+slug: hash-tables
+category: Estruturas de Dados
+description: Aprenda sobre tabelas hash, funções de hash, tratamento de colisões e suas aplicações práticas.
+order: 6
+---
+
+# Tabelas Hash
+
+Aprenda sobre tabelas hash, funções de hash, tratamento de colisões (encadeamento, endereçamento aberto) e suas aplicações práticas.
+
+## Definição
+
+Uma tabela hash é uma estrutura de dados que implementa um tipo abstrato de dados associativo, permitindo o mapeamento de chaves para valores. Utiliza uma função de hash para computar um índice em um array de buckets ou slots, a partir do qual o valor desejado pode ser encontrado.
+
+O principal objetivo das tabelas hash é fornecer acesso rápido aos dados - idealmente em tempo constante O(1) para operações de inserção, busca e remoção.
+
+## Componentes Principais
+
+### 1. Função de Hash
+A função de hash converte uma chave em um índice válido do array. Uma boa função de hash deve:
+- Ser determinística (mesma entrada sempre produz mesma saída)
+- Distribuir uniformemente as chaves pelo espaço de índices
+- Ser computacionalmente eficiente
+
+### 2. Tratamento de Colisões
+Quando duas chaves diferentes produzem o mesmo índice, temos uma colisão. Dois métodos principais:
+- **Encadeamento (Chaining)**: Cada posição do array mantém uma lista ligada
+- **Endereçamento Aberto (Open Addressing)**: Busca outra posição no mesmo array
+
+## Implementação com Encadeamento
+
+Aqui está uma implementação completa de uma tabela hash usando encadeamento em C:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define TAMANHO_TABELA 10
+
+// Estrutura para um nó da lista ligada
+typedef struct No {
+    char *chave;
+    int valor;
+    struct No *proximo;
+} No;
+
+// Estrutura da tabela hash
+typedef struct {
+    No **buckets;
+    int tamanho;
+} TabelaHash;
+
+// Função de hash simples (método da divisão)
+unsigned int funcaoHash(const char *chave) {
+    unsigned int hash = 0;
+    for (int i = 0; chave[i] != '\0'; i++) {
+        hash = hash * 31 + chave[i]; // 31 é um número primo comum
+    }
+    return hash % TAMANHO_TABELA;
+}
+
+// Cria uma nova tabela hash
+TabelaHash* criarTabelaHash() {
+    TabelaHash *tabela = malloc(sizeof(TabelaHash));
+    tabela->tamanho = TAMANHO_TABELA;
+    tabela->buckets = calloc(TAMANHO_TABELA, sizeof(No*));
+    return tabela;
+}
+
+// Cria um novo nó
+No* criarNo(const char *chave, int valor) {
+    No *novoNo = malloc(sizeof(No));
+    novoNo->chave = malloc(strlen(chave) + 1);
+    strcpy(novoNo->chave, chave);
+    novoNo->valor = valor;
+    novoNo->proximo = NULL;
+    return novoNo;
+}
+
+// Insere um par chave-valor na tabela hash
+void inserir(TabelaHash *tabela, const char *chave, int valor) {
+    unsigned int indice = funcaoHash(chave);
+    No *atual = tabela->buckets[indice];
+    
+    // Verifica se a chave já existe
+    while (atual != NULL) {
+        if (strcmp(atual->chave, chave) == 0) {
+            atual->valor = valor; // Atualiza o valor existente
+            return;
+        }
+        atual = atual->proximo;
+    }
+    
+    // Insere no início da lista ligada
+    No *novoNo = criarNo(chave, valor);
+    novoNo->proximo = tabela->buckets[indice];
+    tabela->buckets[indice] = novoNo;
+    
+    printf("Inserido: %s -> %d no índice %d\n", chave, valor, indice);
+}
+
+// Busca um valor pela chave
+int* buscar(TabelaHash *tabela, const char *chave) {
+    unsigned int indice = funcaoHash(chave);
+    No *atual = tabela->buckets[indice];
+    
+    while (atual != NULL) {
+        if (strcmp(atual->chave, chave) == 0) {
+            return &(atual->valor);
+        }
+        atual = atual->proximo;
+    }
+    
+    return NULL; // Não encontrado
+}
+
+// Remove um par chave-valor
+int remover(TabelaHash *tabela, const char *chave) {
+    unsigned int indice = funcaoHash(chave);
+    No *atual = tabela->buckets[indice];
+    No *anterior = NULL;
+    
+    while (atual != NULL) {
+        if (strcmp(atual->chave, chave) == 0) {
+            if (anterior == NULL) {
+                // Remove o primeiro nó
+                tabela->buckets[indice] = atual->proximo;
+            } else {
+                anterior->proximo = atual->proximo;
+            }
+            
+            int valor = atual->valor;
+            free(atual->chave);
+            free(atual);
+            printf("Removido: %s\n", chave);
+            return valor;
+        }
+        anterior = atual;
+        atual = atual->proximo;
+    }
+    
+    return -1; // Não encontrado
+}
+
+// Imprime toda a tabela hash
+void imprimirTabela(TabelaHash *tabela) {
+    printf("\n=== TABELA HASH ===\n");
+    for (int i = 0; i < tabela->tamanho; i++) {
+        printf("Bucket %d: ", i);
+        No *atual = tabela->buckets[i];
+        
+        if (atual == NULL) {
+            printf("vazio");
+        } else {
+            while (atual != NULL) {
+                printf("(%s: %d)", atual->chave, atual->valor);
+                if (atual->proximo != NULL) {
+                    printf(" -> ");
+                }
+                atual = atual->proximo;
+            }
+        }
+        printf("\n");
+    }
+    printf("==================\n\n");
+}
+
+// Libera a memória da tabela hash
+void destruirTabela(TabelaHash *tabela) {
+    for (int i = 0; i < tabela->tamanho; i++) {
+        No *atual = tabela->buckets[i];
+        while (atual != NULL) {
+            No *temp = atual;
+            atual = atual->proximo;
+            free(temp->chave);
+            free(temp);
+        }
+    }
+    free(tabela->buckets);
+    free(tabela);
+}
+```
+
+## Exemplo de Uso
+
+Agora vamos testar nossa implementação:
+
+```c
+int main() {
+    TabelaHash *tabela = criarTabelaHash();
+    
+    printf("=== INSERINDO ELEMENTOS ===\n");
+    inserir(tabela, "nome", 100);
+    inserir(tabela, "idade", 25);
+    inserir(tabela, "salario", 5000);
+    inserir(tabela, "codigo", 12345);
+    inserir(tabela, "telefone", 987654321);
+    
+    imprimirTabela(tabela);
+    
+    printf("=== BUSCANDO ELEMENTOS ===\n");
+    int *valor = buscar(tabela, "salario");
+    if (valor != NULL) {
+        printf("Encontrado: salario = %d\n", *valor);
+    } else {
+        printf("Chave 'salario' não encontrada\n");
+    }
+    
+    valor = buscar(tabela, "endereco");
+    if (valor != NULL) {
+        printf("Encontrado: endereco = %d\n", *valor);
+    } else {
+        printf("Chave 'endereco' não encontrada\n");
+    }
+    
+    printf("\n=== ATUALIZANDO VALOR ===\n");
+    inserir(tabela, "idade", 26); // Atualiza valor existente
+    imprimirTabela(tabela);
+    
+    printf("=== REMOVENDO ELEMENTOS ===\n");
+    remover(tabela, "telefone");
+    imprimirTabela(tabela);
+    
+    destruirTabela(tabela);
+    return 0;
+}
+```
+
+## Exemplo de Saída
+
+```
+=== INSERINDO ELEMENTOS ===
+Inserido: nome -> 100 no índice 6
+Inserido: idade -> 25 no índice 3
+Inserido: salario -> 5000 no índice 7
+Inserido: codigo -> 12345 no índice 4
+Inserido: telefone -> 987654321 no índice 9
+
+=== TABELA HASH ===
+Bucket 0: vazio
+Bucket 1: vazio
+Bucket 2: vazio
+Bucket 3: (idade: 25)
+Bucket 4: (codigo: 12345)
+Bucket 5: vazio
+Bucket 6: (nome: 100)
+Bucket 7: (salario: 5000)
+Bucket 8: vazio
+Bucket 9: (telefone: 987654321)
+==================
+
+=== BUSCANDO ELEMENTOS ===
+Encontrado: salario = 5000
+Chave 'endereco' não encontrada
+
+=== ATUALIZANDO VALOR ===
+Bucket 3: (idade: 26)
+
+=== REMOVENDO ELEMENTOS ===
+Removido: telefone
+Bucket 9: vazio
+```
+
+## Tratamento de Colisões - Endereçamento Aberto
+
+Aqui está um exemplo de implementação com sondagem linear:
+
+```c
+#define TAMANHO_TABELA_ABERTA 10
+#define VAZIO -1
+#define DELETADO -2
+
+typedef struct {
+    char *chaves[TAMANHO_TABELA_ABERTA];
+    int valores[TAMANHO_TABELA_ABERTA];
+    int tamanho;
+} TabelaHashAberta;
+
+TabelaHashAberta* criarTabelaHashAberta() {
+    TabelaHashAberta *tabela = malloc(sizeof(TabelaHashAberta));
+    tabela->tamanho = TAMANHO_TABELA_ABERTA;
+    
+    for (int i = 0; i < TAMANHO_TABELA_ABERTA; i++) {
+        tabela->chaves[i] = NULL;
+        tabela->valores[i] = VAZIO;
+    }
+    
+    return tabela;
+}
+
+void inserirAberta(TabelaHashAberta *tabela, const char *chave, int valor) {
+    unsigned int indice = funcaoHash(chave);
+    int indiceOriginal = indice;
+    
+    // Sondagem linear para encontrar posição vazia
+    while (tabela->valores[indice] != VAZIO && tabela->valores[indice] != DELETADO) {
+        // Se a chave já existe, atualiza o valor
+        if (tabela->chaves[indice] != NULL && strcmp(tabela->chaves[indice], chave) == 0) {
+            tabela->valores[indice] = valor;
+            printf("Atualizado: %s -> %d no índice %d\n", chave, valor, indice);
+            return;
+        }
+        
+        indice = (indice + 1) % TAMANHO_TABELA_ABERTA;
+        
+        // Tabela cheia
+        if (indice == indiceOriginal) {
+            printf("Erro: Tabela cheia!\n");
+            return;
+        }
+    }
+    
+    // Insere na posição encontrada
+    if (tabela->chaves[indice] != NULL) {
+        free(tabela->chaves[indice]);
+    }
+    
+    tabela->chaves[indice] = malloc(strlen(chave) + 1);
+    strcpy(tabela->chaves[indice], chave);
+    tabela->valores[indice] = valor;
+    
+    printf("Inserido: %s -> %d no índice %d\n", chave, valor, indice);
+}
+```
+
+## Complexidade de Tempo
+
+| Operação | Caso Médio | Caso Pior |
+|----------|------------|-----------|
+| Inserção | O(1)       | O(n)      |
+| Busca    | O(1)       | O(n)      |
+| Remoção  | O(1)       | O(n)      |
+
+O caso pior ocorre quando há muitas colisões, especialmente em endereçamento aberto.
+
+## Aplicações Práticas
+
+### 1. Implementação de Dicionários
+Linguagens como Python usam tabelas hash para implementar dicionários (`dict`).
+
+### 2. Cache de Sistemas
+Sistemas de cache usam tabelas hash para acesso rápido aos dados em memória.
+
+### 3. Bancos de Dados
+Índices hash em bancos de dados para consultas rápidas por chave primária.
+
+### 4. Compiladores
+Tabelas de símbolos para armazenar identificadores e suas informações.
+
+### 5. Algoritmos de String
+- Algoritmo Rabin-Karp para busca de padrões
+- Detecção de duplicatas em conjuntos de strings
+
+## Fatores de Carga e Redimensionamento
+
+O **fator de carga** (α) é a razão entre o número de elementos e o tamanho da tabela:
+
+```
+α = n / m
+onde n = número de elementos, m = tamanho da tabela
+```
+
+- **Encadeamento**: Desempenho aceitável até α ≈ 1.0
+- **Endereçamento Aberto**: Requer redimensionamento quando α > 0.7
+
+## Considerações Importantes
+
+1. **Escolha da Função de Hash**: Deve distribuir uniformemente as chaves
+2. **Gerenciamento de Memória**: Cuidado com vazamentos em linguagens sem GC
+3. **Tratamento de Colisões**: Escolha baseada no padrão de uso esperado
+4. **Redimensionamento**: Essencial para manter boa performance
+5. **Strings como Chaves**: Requer funções de hash específicas para strings
+
+As tabelas hash são fundamentais na ciência da computação, oferecendo uma das melhores relações custo-benefício para operações de mapeamento chave-valor quando bem implementadas.

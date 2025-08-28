@@ -1,0 +1,334 @@
+---
+id: arvore-avl
+title: Árvore AVL
+slug: arvore-avl
+category: Árvores
+description: Aprenda sobre árvores AVL, balanceamento automático e suas operações (inserção, remoção e rotações).
+order: 3
+---
+
+# Árvores AVL
+
+Aprenda sobre árvores AVL, balanceamento automático e suas operações (inserção, remoção e rotações).
+
+## Definição
+
+Uma árvore AVL é uma árvore binária de busca auto-balanceada onde a diferença entre as alturas das subárvores esquerda e direita (fator de balanceamento) de qualquer nó não pode ser maior que 1. Esta propriedade garante que a árvore permaneça balanceada, mantendo operações com complexidade O(log n).
+
+O nome AVL vem dos matemáticos Adelson-Velsky e Landis, que inventaram esta estrutura em 1962.
+
+### Propriedades Fundamentais:
+- **Fator de Balanceamento:** Para cada nó, |altura(esquerda) - altura(direita)| ≤ 1
+- **Auto-balanceamento:** Rotações automáticas mantêm o balanceamento após inserções/remoções
+- **Complexidade:** Todas as operações têm complexidade O(log n) no pior caso
+
+Abaixo temos um bloco de código em C que implementa uma árvore AVL completa com inserção, remoção e rotações:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+// Estrutura do nó da árvore AVL
+typedef struct No {
+    int chave;
+    struct No* esquerda;
+    struct No* direita;
+    int altura;
+} No;
+
+// Função para obter a altura de um nó
+int obterAltura(No* no) {
+    if (no == NULL)
+        return 0;
+    return no->altura;
+}
+
+// Função para calcular o máximo entre dois valores
+int maximo(int a, int b) {
+    return (a > b) ? a : b;
+}
+
+// Função para criar um novo nó
+No* criarNo(int chave) {
+    No* no = (No*)malloc(sizeof(No));
+    no->chave = chave;
+    no->esquerda = NULL;
+    no->direita = NULL;
+    no->altura = 1; // Novo nó é inicialmente inserido na folha
+    return no;
+}
+
+// Função para calcular o fator de balanceamento de um nó
+int obterFatorBalanceamento(No* no) {
+    if (no == NULL)
+        return 0;
+    return obterAltura(no->esquerda) - obterAltura(no->direita);
+}
+
+// Rotação à direita
+No* rotacaoDireita(No* y) {
+    No* x = y->esquerda;
+    No* T2 = x->direita;
+
+    // Realizar rotação
+    x->direita = y;
+    y->esquerda = T2;
+
+    // Atualizar alturas
+    y->altura = maximo(obterAltura(y->esquerda), obterAltura(y->direita)) + 1;
+    x->altura = maximo(obterAltura(x->esquerda), obterAltura(x->direita)) + 1;
+
+    // Retornar nova raiz
+    return x;
+}
+
+// Rotação à esquerda
+No* rotacaoEsquerda(No* x) {
+    No* y = x->direita;
+    No* T2 = y->esquerda;
+
+    // Realizar rotação
+    y->esquerda = x;
+    x->direita = T2;
+
+    // Atualizar alturas
+    x->altura = maximo(obterAltura(x->esquerda), obterAltura(x->direita)) + 1;
+    y->altura = maximo(obterAltura(y->esquerda), obterAltura(y->direita)) + 1;
+
+    // Retornar nova raiz
+    return y;
+}
+
+// Função para inserir um nó na árvore AVL
+No* inserir(No* no, int chave) {
+    // 1. Realizar inserção normal de BST
+    if (no == NULL)
+        return criarNo(chave);
+
+    if (chave < no->chave)
+        no->esquerda = inserir(no->esquerda, chave);
+    else if (chave > no->chave)
+        no->direita = inserir(no->direita, chave);
+    else // Chaves iguais não são permitidas
+        return no;
+
+    // 2. Atualizar altura do nó ancestral
+    no->altura = 1 + maximo(obterAltura(no->esquerda), obterAltura(no->direita));
+
+    // 3. Obter o fator de balanceamento deste nó ancestral
+    int balanceamento = obterFatorBalanceamento(no);
+
+    // Se este nó ficou desbalanceado, então temos 4 casos:
+
+    // Caso Esquerda Esquerda
+    if (balanceamento > 1 && chave < no->esquerda->chave)
+        return rotacaoDireita(no);
+
+    // Caso Direita Direita
+    if (balanceamento < -1 && chave > no->direita->chave)
+        return rotacaoEsquerda(no);
+
+    // Caso Esquerda Direita
+    if (balanceamento > 1 && chave > no->esquerda->chave) {
+        no->esquerda = rotacaoEsquerda(no->esquerda);
+        return rotacaoDireita(no);
+    }
+
+    // Caso Direita Esquerda
+    if (balanceamento < -1 && chave < no->direita->chave) {
+        no->direita = rotacaoDireita(no->direita);
+        return rotacaoEsquerda(no);
+    }
+
+    // Retornar o nó (inalterado)
+    return no;
+}
+
+// Função para encontrar o nó com valor mínimo
+No* encontrarMinimo(No* no) {
+    No* atual = no;
+    while (atual->esquerda != NULL)
+        atual = atual->esquerda;
+    return atual;
+}
+
+// Função para remover um nó da árvore AVL
+No* remover(No* raiz, int chave) {
+    // 1. Realizar remoção normal de BST
+    if (raiz == NULL)
+        return raiz;
+
+    if (chave < raiz->chave)
+        raiz->esquerda = remover(raiz->esquerda, chave);
+    else if (chave > raiz->chave)
+        raiz->direita = remover(raiz->direita, chave);
+    else {
+        // Este é o nó a ser removido
+        if ((raiz->esquerda == NULL) || (raiz->direita == NULL)) {
+            No* temp = raiz->esquerda ? raiz->esquerda : raiz->direita;
+
+            if (temp == NULL) {
+                temp = raiz;
+                raiz = NULL;
+            } else
+                *raiz = *temp; // Copia o conteúdo do filho não vazio
+            free(temp);
+        } else {
+            // Nó com dois filhos: obter o sucessor inorder
+            No* temp = encontrarMinimo(raiz->direita);
+
+            // Copiar a chave do sucessor inorder para este nó
+            raiz->chave = temp->chave;
+
+            // Remover o sucessor inorder
+            raiz->direita = remover(raiz->direita, temp->chave);
+        }
+    }
+
+    // Se a árvore tinha apenas um nó, então retornar
+    if (raiz == NULL)
+        return raiz;
+
+    // 2. Atualizar altura do nó atual
+    raiz->altura = 1 + maximo(obterAltura(raiz->esquerda), obterAltura(raiz->direita));
+
+    // 3. Obter o fator de balanceamento deste nó
+    int balanceamento = obterFatorBalanceamento(raiz);
+
+    // Se este nó ficou desbalanceado, então temos 4 casos:
+
+    // Caso Esquerda Esquerda
+    if (balanceamento > 1 && obterFatorBalanceamento(raiz->esquerda) >= 0)
+        return rotacaoDireita(raiz);
+
+    // Caso Esquerda Direita
+    if (balanceamento > 1 && obterFatorBalanceamento(raiz->esquerda) < 0) {
+        raiz->esquerda = rotacaoEsquerda(raiz->esquerda);
+        return rotacaoDireita(raiz);
+    }
+
+    // Caso Direita Direita
+    if (balanceamento < -1 && obterFatorBalanceamento(raiz->direita) <= 0)
+        return rotacaoEsquerda(raiz);
+
+    // Caso Direita Esquerda
+    if (balanceamento < -1 && obterFatorBalanceamento(raiz->direita) > 0) {
+        raiz->direita = rotacaoDireita(raiz->direita);
+        return rotacaoEsquerda(raiz);
+    }
+
+    return raiz;
+}
+
+// Função para imprimir a árvore em ordem
+void imprimirEmOrdem(No* raiz) {
+    if (raiz != NULL) {
+        imprimirEmOrdem(raiz->esquerda);
+        printf("%d ", raiz->chave);
+        imprimirEmOrdem(raiz->direita);
+    }
+}
+
+// Função para buscar um valor na árvore
+No* buscar(No* raiz, int chave) {
+    if (raiz == NULL || raiz->chave == chave)
+        return raiz;
+
+    if (chave < raiz->chave)
+        return buscar(raiz->esquerda, chave);
+
+    return buscar(raiz->direita, chave);
+}
+
+// Função para imprimir informações detalhadas de um nó
+void imprimirDetalhesNo(No* no) {
+    if (no != NULL) {
+        printf("Nó: %d, Altura: %d, Fator de Balanceamento: %d\n", 
+               no->chave, no->altura, obterFatorBalanceamento(no));
+    }
+}
+```
+
+Agora, vamos criar uma função main para demonstrar o funcionamento da árvore AVL:
+
+```c
+// Função principal
+int main() {
+    No* raiz = NULL;
+
+    printf("=== Demonstração da Árvore AVL ===\n\n");
+
+    // Inserindo elementos
+    printf("Inserindo elementos: 10, 20, 30, 40, 50, 25\n");
+    raiz = inserir(raiz, 10);
+    raiz = inserir(raiz, 20);
+    raiz = inserir(raiz, 30);
+    raiz = inserir(raiz, 40);
+    raiz = inserir(raiz, 50);
+    raiz = inserir(raiz, 25);
+
+    printf("Árvore AVL em ordem: ");
+    imprimirEmOrdem(raiz);
+    printf("\n\n");
+
+    // Mostrando detalhes da raiz
+    printf("Detalhes da raiz:\n");
+    imprimirDetalhesNo(raiz);
+    printf("\n");
+
+    // Buscando um elemento
+    printf("Buscando o elemento 30: ");
+    No* resultado = buscar(raiz, 30);
+    if (resultado != NULL)
+        printf("Encontrado!\n");
+    else
+        printf("Não encontrado!\n");
+
+    // Removendo um elemento
+    printf("\nRemoção do elemento 10:\n");
+    raiz = remover(raiz, 10);
+    printf("Árvore AVL em ordem após remoção: ");
+    imprimirEmOrdem(raiz);
+    printf("\n\n");
+
+    printf("Detalhes da nova raiz:\n");
+    imprimirDetalhesNo(raiz);
+
+    return 0;
+}
+```
+
+## Tipos de Rotações
+
+As árvores AVL utilizam quatro tipos de rotações para manter o balanceamento:
+
+### 1. Rotação Simples à Direita (LL)
+Usada quando o fator de balanceamento > 1 e a inserção foi feita na subárvore esquerda da subárvore esquerda.
+
+### 2. Rotação Simples à Esquerda (RR)
+Usada quando o fator de balanceamento < -1 e a inserção foi feita na subárvore direita da subárvore direita.
+
+### 3. Rotação Dupla Esquerda-Direita (LR)
+Usada quando o fator de balanceamento > 1 e a inserção foi feita na subárvore direita da subárvore esquerda.
+
+### 4. Rotação Dupla Direita-Esquerda (RL)
+Usada quando o fator de balanceamento < -1 e a inserção foi feita na subárvore esquerda da subárvore direita.
+
+## Exemplos de contexto de uso:
+
+### Em que situações as árvores AVL são utilizadas?
+
+1. **Sistemas de banco de dados:**
+   - Árvores AVL são utilizadas em índices de banco de dados onde é necessário garantir tempos de busca consistentes e rápidos.
+
+2. **Compiladores e interpretadores:**
+   - Utilizadas em tabelas de símbolos para manter identificadores ordenados com acesso eficiente.
+
+3. **Sistemas de arquivos:**
+   - Alguns sistemas de arquivos utilizam árvores AVL para organizar metadados e diretórios de forma eficiente.
+
+4. **Aplicações de tempo real:**
+   - Quando é necessário garantir tempo de resposta previsível, as árvores AVL oferecem operações O(log n) no pior caso.
+
+5. **Bibliotecas de containers:**
+   - Muitas implementações de sets e maps em bibliotecas padrão utilizam árvores AVL ou estruturas similares.

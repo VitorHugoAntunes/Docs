@@ -7,11 +7,11 @@ description: Aprenda sobre arrays e listas, estruturas que armazenam elementos d
 order: 2
 ---
 
-# 2 - Array e Listas
+# Arrays e Listas
 
 Aprenda sobre `arrays` e listas, estruturas que armazenam elementos de forma sequencial.
 
-### Definição
+## Definição
 
 `Array` é uma estrutura de dados que tem tamanho e tipo definidos que armazenam uma sequência de elementos.
 
@@ -41,7 +41,7 @@ Em C:
 
 ![Example2](https://github.com/VitorHugoAntunes/Data_Structure_Learning/blob/main/Assets/DS1_ArraysAndLists_Exemplo2.png?raw=true)
 
-### Outras formas de definir um `array` em Java:
+## Outras formas de definir um `array` em Java
 
 Em Java também podemos inicializar um `array` a partir de uma classe invólucro:
 
@@ -80,7 +80,7 @@ vetor1[3] = 35;
 vetor1[4] = 15;
 ```
 
-### NOTA:
+## Observações importantes
 
 Um `array` convencional não se pode acessar todas as suas posições de uma só vez exceto em sua inicialização ao inserir valores, caso deseje acessar e imprimir os valores de cada posição, será necessário utilizar um laço de repetição e iterar por cada valor:
 
@@ -92,13 +92,13 @@ for (i=0; i<vetor1.length; i++){
 }
 ```
 
-Caso tente acessar diretamente os valores do `array` usando `System.out.println(vetor1);`, retornará apenas a referência da classe do `array` com o hash hexadecimal e a referência ao tipo do `array` no formato `[I@15aeb7ab`. “I” significando que pertence a um `array` de inteiros, seguido do seu endereço na memória.
+Caso tente acessar diretamente os valores do `array` usando `System.out.println(vetor1);`, retornará apenas a referência da classe do `array` com o hash hexadecimal e a referência ao tipo do `array` no formato `[I@15aeb7ab`. "I" significando que pertence a um `array` de inteiros, seguido do seu endereço na memória.
 
 O mesmo não ocorre se o `array` for criado com uma classe invólucro, pois desta forma estamos imprimindo o próprio objeto e retorna os valores normalmente.
 
 ## Diferenças entre Array e Lista
 
-### Array:
+### Array
 
 Os `arrays` em Java têm um tamanho fixo que é determinado na criação e não pode ser alterado posteriormente. Se precisar de um tamanho diferente, será necessário criar um novo `array`.
 
@@ -106,7 +106,7 @@ Um `array` pode ser composto por tipos primitivos, como `int` ou `char`, ou por 
 
 O acesso aos elementos é feito diretamente por índice, e a manipulação dos elementos é geralmente mais eficiente.
 
-### Lista:
+### Lista
 
 Listas em Java, como `ArrayList`, têm tamanho dinâmico, o que significa que podem crescer ou encolher conforme necessário.
 
@@ -116,7 +116,7 @@ Listas oferecem uma variedade de métodos e funcionalidades como adição, remo�
 
 É uma coleção de dados bidimensional (no mínimo) de valores do mesmo tipo de dados organizados por linhas e colunas.
 
-Pode ser interpretado como um `array` de vetores, onde os elementos são encontrados a partir dos índices (um para linha e um para coluna), onde cada “linha” na verdade é um `array` diferente.
+Pode ser interpretado como um `array` de vetores, onde os elementos são encontrados a partir dos índices (um para linha e um para coluna), onde cada "linha" na verdade é um `array` diferente.
 
 Exemplo em C:
 
@@ -205,17 +205,19 @@ for (i = 0; i < matriz.length; i++) {
 }
 ```
 
-### Dúvidas
+### Como o computador interpreta matrizes
 
-A forma como nós (humanos) enxergamos uma matriz é diferente de como um computador “enxerga”. Nós temos o conceito de linhas e colunas, porém a máquina interpreta as linhas como diferentes vetores, ou seja, cada linha é um vetor e as “colunas” são definidas pelos elementos das “linhas”.
+A forma como nós (humanos) enxergamos uma matriz é diferente de como um computador "enxerga". Nós temos o conceito de linhas e colunas, porém a máquina interpreta as linhas como diferentes vetores, ou seja, cada linha é um vetor e as "colunas" são definidas pelos elementos das "linhas".
 
-Como no exemplo acima, para contar a quantidade de “linhas”, está apenas contando a quantidade de vetores que há dentro de matriz por meio de `length`. E as colunas definidas pelas quantidade de elementos de cada “linha” por meio de `[i].length`. Ou seja, 3 vetores (3 linhas) com 3 elementos cada linha, logo 3 colunas.
+Como no exemplo acima, para contar a quantidade de "linhas", está apenas contando a quantidade de vetores que há dentro de matriz por meio de `length`. E as colunas definidas pelas quantidade de elementos de cada "linha" por meio de `[i].length`. Ou seja, 3 vetores (3 linhas) com 3 elementos cada linha, logo 3 colunas.
 
-### Exercícios de fixação
+## Exercícios de fixação
 
 A seguir temos dois exercícios propostos que utilizam os exemplos passados até agora.
 
-**Exercício 1:**  criar um novo vetor, inicializar ele com quaisquer valores e criar um algoritmo que encontre o maior elemento dentro deste vetor.
+### Exercício 1
+
+Criar um novo vetor, inicializar ele com quaisquer valores e criar um algoritmo que encontre o maior elemento dentro deste vetor.
 
 ```java
 public static void maiorElemento(){
@@ -235,7 +237,9 @@ public static void maiorElemento(){
 
 ![Example7](https://github.com/VitorHugoAntunes/Data_Structure_Learning/blob/main/Assets/DS1_ArraysAndLists_Exemplo7.png?raw=true)
 
-**Exercício 2:** Desenvolva um algoritmo que preencha uma matriz numérica de dimensões 3x3. Após preencher toda a matriz, o usuário deve inserir uma chave de busca X.
+### Exercício 2
+
+Desenvolva um algoritmo que preencha uma matriz numérica de dimensões 3x3. Após preencher toda a matriz, o usuário deve inserir uma chave de busca X.
 Caso exista algum número igual a X dentro da matriz, o algoritmo deve mostrar na tela, os índices da linha e da coluna da posição na qual X foi encontrado pela primeira vez. Caso contrário, o algoritmo deve se encerrar com uma única mensagem, dizendo "chave não encontrada".
 
 ```java

@@ -1,0 +1,653 @@
+---
+id: union-find-estrutura
+title: Estrutura Union-Find (Disjoint Set)
+slug: union-find-estrutura
+category: Grafos
+description: Aprenda sobre a estrutura de dados Union-Find (Disjoint Set), suas otimizações e aplicações práticas em problemas de conectividade.
+order: 6
+---
+
+# Estrutura Union-Find (Disjoint Set)
+
+Aprenda sobre a estrutura de dados Union-Find (Disjoint Set), suas otimizações e aplicações práticas em problemas de conectividade.
+
+## Definição
+
+Union-Find, também conhecido como Disjoint Set Union (DSU), é uma estrutura de dados que mantém uma coleção de conjuntos disjuntos (não sobrepostos). É especialmente eficiente para operações de união de conjuntos e verificação se dois elementos pertencem ao mesmo conjunto. A estrutura é fundamental em algoritmos como Kruskal para árvore geradora mínima e detecção de componentes conexas.
+
+### Propriedades fundamentais:
+- **Conjuntos disjuntos:** Cada elemento pertence a exatamente um conjunto
+- **Representante:** Cada conjunto tem um elemento que o representa (raiz)
+- **Operações principais:** Union (unir conjuntos) e Find (encontrar representante)
+- **Otimizações:** Path compression e union by rank/size
+
+Abaixo temos um bloco de código em C que implementa Union-Find com otimizações:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
+#define MAX_ELEMENTOS 10000
+
+// Estrutura Union-Find otimizada
+typedef struct UnionFind {
+    int* pai;           // Array de pais (representa a árvore)
+    int* rank;          // Rank (altura aproximada) de cada árvore
+    int* tamanho;       // Tamanho de cada conjunto
+    int numElementos;   // Número total de elementos
+    int numConjuntos;   // Número de conjuntos disjuntos
+    long long operacoes; // Contador de operações para análise
+} UnionFind;
+
+// Função para criar uma nova estrutura Union-Find
+UnionFind* criarUnionFind(int n) {
+    if (n <= 0 || n > MAX_ELEMENTOS) {
+        printf("Erro: Número de elementos inválido (%d)\n", n);
+        return NULL;
+    }
+    
+    UnionFind* uf = (UnionFind*)malloc(sizeof(UnionFind));
+    if (!uf) {
+        printf("Erro: Falha na alocação de memória\n");
+        return NULL;
+    }
+    
+    uf->pai = (int*)malloc(n * sizeof(int));
+    uf->rank = (int*)malloc(n * sizeof(int));
+    uf->tamanho = (int*)malloc(n * sizeof(int));
+    
+    if (!uf->pai || !uf->rank || !uf->tamanho) {
+        printf("Erro: Falha na alocação de arrays\n");
+        free(uf->pai);
+        free(uf->rank);
+        free(uf->tamanho);
+        free(uf);
+        return NULL;
+    }
+    
+    uf->numElementos = n;
+    uf->numConjuntos = n;
+    uf->operacoes = 0;
+    
+    // Inicializar: cada elemento é seu próprio pai (conjunto unitário)
+    for (int i = 0; i < n; i++) {
+        uf->pai[i] = i;        // Cada elemento é raiz de si mesmo
+        uf->rank[i] = 0;       // Rank inicial é 0
+        uf->tamanho[i] = 1;    // Cada conjunto tem tamanho 1
+    }
+    
+    printf("Union-Find criado com %d elementos\n", n);
+    return uf;
+}
+
+// Função Find com compressão de caminho (Path Compression)
+int find(UnionFind* uf, int x) {
+    if (!uf || x < 0 || x >= uf->numElementos) {
+        printf("Erro: Elemento inválido (%d)\n", x);
+        return -1;
+    }
+    
+    uf->operacoes++;
+    
+    // Se x não é raiz, recursivamente encontrar a raiz e aplicar path compression
+    if (uf->pai[x] != x) {
+        uf->pai[x] = find(uf, uf->pai[x]); // Path compression
+    }
+    
+    return uf->pai[x];
+}
+
+// Função Find iterativa (alternativa sem recursão)
+int findIterativo(UnionFind* uf, int x) {
+    if (!uf || x < 0 || x >= uf->numElementos) {
+        return -1;
+    }
+    
+    uf->operacoes++;
+    
+    // Encontrar a raiz
+    int raiz = x;
+    while (uf->pai[raiz] != raiz) {
+        raiz = uf->pai[raiz];
+    }
+    
+    // Path compression: fazer todos os nós no caminho apontarem para a raiz
+    while (uf->pai[x] != x) {
+        int proximo = uf->pai[x];
+        uf->pai[x] = raiz;
+        x = proximo;
+    }
+    
+    return raiz;
+}
+
+// Função Union por rank (Union by Rank)
+bool unionPorRank(UnionFind* uf, int x, int y) {
+    if (!uf) {
+        printf("Erro: Union-Find não inicializado\n");
+        return false;
+    }
+    
+    int raizX = find(uf, x);
+    int raizY = find(uf, y);
+    
+    if (raizX == -1 || raizY == -1) {
+        return false;
+    }
+    
+    // Se já estão no mesmo conjunto
+    if (raizX == raizY) {
+        printf("Elementos %d e %d já estão no mesmo conjunto (raiz: %d)\n", x, y, raizX);
+        return false;
+    }
+    
+    uf->operacoes++;
+    
+    // Union by rank: anexar árvore menor à maior
+    if (uf->rank[raizX] < uf->rank[raizY]) {
+        uf->pai[raizX] = raizY;
+        uf->tamanho[raizY] += uf->tamanho[raizX];
+    } else if (uf->rank[raizX] > uf->rank[raizY]) {
+        uf->pai[raizY] = raizX;
+        uf->tamanho[raizX] += uf->tamanho[raizY];
+    } else {
+        uf->pai[raizY] = raizX;
+        uf->tamanho[raizX] += uf->tamanho[raizY];
+        uf->rank[raizX]++; // Incrementar rank apenas quando ranks são iguais
+    }
+    
+    uf->numConjuntos--;
+    printf("União realizada: %d e %d (raízes: %d e %d)\n", x, y, raizX, raizY);
+    return true;
+}
+
+// Função Union por tamanho (Union by Size) - alternativa
+bool unionPorTamanho(UnionFind* uf, int x, int y) {
+    if (!uf) {
+        return false;
+    }
+    
+    int raizX = find(uf, x);
+    int raizY = find(uf, y);
+    
+    if (raizX == -1 || raizY == -1 || raizX == raizY) {
+        return false;
+    }
+    
+    uf->operacoes++;
+    
+    // Union by size: anexar conjunto menor ao maior
+    if (uf->tamanho[raizX] < uf->tamanho[raizY]) {
+        uf->pai[raizX] = raizY;
+        uf->tamanho[raizY] += uf->tamanho[raizX];
+    } else {
+        uf->pai[raizY] = raizX;
+        uf->tamanho[raizX] += uf->tamanho[raizY];
+    }
+    
+    uf->numConjuntos--;
+    return true;
+}
+
+// Função para verificar se dois elementos estão conectados
+bool conectados(UnionFind* uf, int x, int y) {
+    if (!uf) {
+        return false;
+    }
+    
+    int raizX = find(uf, x);
+    int raizY = find(uf, y);
+    
+    return (raizX != -1 && raizY != -1 && raizX == raizY);
+}
+
+// Função para obter o tamanho do conjunto que contém x
+int tamanhoConjunto(UnionFind* uf, int x) {
+    if (!uf) {
+        return -1;
+    }
+    
+    int raiz = find(uf, x);
+    if (raiz == -1) {
+        return -1;
+    }
+    
+    return uf->tamanho[raiz];
+}
+
+// Função para listar todos os conjuntos
+void listarConjuntos(UnionFind* uf) {
+    if (!uf) {
+        return;
+    }
+    
+    printf("=== Estado dos Conjuntos ===\n");
+    printf("Total de conjuntos: %d\n", uf->numConjuntos);
+    
+    // Encontrar todas as raízes
+    bool* ehRaiz = (bool*)calloc(uf->numElementos, sizeof(bool));
+    if (!ehRaiz) {
+        printf("Erro: Falha na alocação de memória temporária\n");
+        return;
+    }
+    
+    for (int i = 0; i < uf->numElementos; i++) {
+        int raiz = find(uf, i);
+        if (raiz != -1) {
+            ehRaiz[raiz] = true;
+        }
+    }
+    
+    // Listar elementos de cada conjunto
+    for (int i = 0; i < uf->numElementos; i++) {
+        if (ehRaiz[i]) {
+            printf("Conjunto (raiz %d, tamanho %d): ", i, uf->tamanho[i]);
+            for (int j = 0; j < uf->numElementos; j++) {
+                if (find(uf, j) == i) {
+                    printf("%d ", j);
+                }
+            }
+            printf("\n");
+        }
+    }
+    
+    free(ehRaiz);
+    printf("\n");
+}
+
+// Função para imprimir estatísticas
+void imprimirEstatisticas(UnionFind* uf) {
+    if (!uf) {
+        return;
+    }
+    
+    printf("=== Estatísticas Union-Find ===\n");
+    printf("Número de elementos: %d\n", uf->numElementos);
+    printf("Número de conjuntos: %d\n", uf->numConjuntos);
+    printf("Total de operações: %lld\n", uf->operacoes);
+    
+    // Calcular altura máxima das árvores
+    int alturaMax = 0;
+    for (int i = 0; i < uf->numElementos; i++) {
+        if (uf->rank[i] > alturaMax) {
+            alturaMax = uf->rank[i];
+        }
+    }
+    printf("Altura máxima das árvores: %d\n", alturaMax);
+    
+    // Encontrar maior conjunto
+    int maiorConjunto = 0;
+    for (int i = 0; i < uf->numElementos; i++) {
+        if (uf->pai[i] == i && uf->tamanho[i] > maiorConjunto) {
+            maiorConjunto = uf->tamanho[i];
+        }
+    }
+    printf("Tamanho do maior conjunto: %d\n", maiorConjunto);
+    printf("\n");
+}
+
+// Função para resetar Union-Find ao estado inicial
+void resetar(UnionFind* uf) {
+    if (!uf) {
+        return;
+    }
+    
+    uf->numConjuntos = uf->numElementos;
+    uf->operacoes = 0;
+    
+    for (int i = 0; i < uf->numElementos; i++) {
+        uf->pai[i] = i;
+        uf->rank[i] = 0;
+        uf->tamanho[i] = 1;
+    }
+    
+    printf("Union-Find resetado ao estado inicial\n");
+}
+
+// Estrutura para representar uma aresta (útil para algoritmo de Kruskal)
+typedef struct Aresta {
+    int origem;
+    int destino;
+    int peso;
+} Aresta;
+
+// Função para liberar memória da estrutura Union-Find
+void liberarUnionFind(UnionFind* uf) {
+    if (!uf) {
+        return;
+    }
+    
+    free(uf->pai);
+    free(uf->rank);
+    free(uf->tamanho);
+    free(uf);
+}
+
+
+// Função de comparação para ordenar arestas por peso
+int compararArestas(const void* a, const void* b) {
+    Aresta* arestaA = (Aresta*)a;
+    Aresta* arestaB = (Aresta*)b;
+    return arestaA->peso - arestaB->peso;
+}
+
+// Implementação do algoritmo de Kruskal usando Union-Find
+void algoritmoKruskal(Aresta arestas[], int numArestas, int numVertices) {
+    printf("=== Algoritmo de Kruskal ===\n");
+    
+    // Ordenar arestas por peso
+    qsort(arestas, numArestas, sizeof(Aresta), compararArestas);
+    
+    // Criar Union-Find
+    UnionFind* uf = criarUnionFind(numVertices);
+    if (!uf) {
+        return;
+    }
+    
+    printf("Arestas na Árvore Geradora Mínima:\n");
+    int pesoTotal = 0;
+    int arestasAdicionadas = 0;
+    
+    for (int i = 0; i < numArestas && arestasAdicionadas < numVertices - 1; i++) {
+        int u = arestas[i].origem;
+        int v = arestas[i].destino;
+        int peso = arestas[i].peso;
+        
+        // Se os vértices não estão conectados, adicionar aresta
+        if (!conectados(uf, u, v)) {
+            unionPorRank(uf, u, v);
+            printf("  (%d - %d) peso: %d\n", u, v, peso);
+            pesoTotal += peso;
+            arestasAdicionadas++;
+        }
+    }
+    
+    printf("Peso total da MST: %d\n", pesoTotal);
+    printf("Arestas na MST: %d\n", arestasAdicionadas);
+    
+    liberarUnionFind(uf);
+    printf("\n");
+}
+
+// Função para detectar ciclos em grafo não-direcionado
+bool temCiclo(Aresta arestas[], int numArestas, int numVertices) {
+    printf("=== Detecção de Ciclos ===\n");
+    
+    UnionFind* uf = criarUnionFind(numVertices);
+    if (!uf) {
+        return false;
+    }
+    
+    for (int i = 0; i < numArestas; i++) {
+        int u = arestas[i].origem;
+        int v = arestas[i].destino;
+        
+        // Se os vértices já estão conectados, há um ciclo
+        if (conectados(uf, u, v)) {
+            printf("Ciclo detectado na aresta (%d - %d)\n", u, v);
+            liberarUnionFind(uf);
+            return true;
+        }
+        
+        unionPorRank(uf, u, v);
+    }
+    
+    printf("Nenhum ciclo detectado\n");
+    liberarUnionFind(uf);
+    return false;
+}
+
+// Função para contar componentes conexas
+int contarComponentesConexas(Aresta arestas[], int numArestas, int numVertices) {
+    printf("=== Contagem de Componentes Conexas ===\n");
+    
+    UnionFind* uf = criarUnionFind(numVertices);
+    if (!uf) {
+        return -1;
+    }
+    
+    // Processar todas as arestas
+    for (int i = 0; i < numArestas; i++) {
+        unionPorRank(uf, arestas[i].origem, arestas[i].destino);
+    }
+    
+    int componentes = uf->numConjuntos;
+    printf("Número de componentes conexas: %d\n", componentes);
+    
+    listarConjuntos(uf);
+    liberarUnionFind(uf);
+    
+    return componentes;
+}
+
+// Função principal para demonstrar Union-Find
+int main() {
+    printf("=== Demonstração da Estrutura Union-Find ===\n\n");
+    
+    // Criar Union-Find com 10 elementos (0-9)
+    UnionFind* uf = criarUnionFind(10);
+    if (!uf) {
+        return 1;
+    }
+    
+    // Estado inicial
+    printf("\n=== Estado Inicial ===\n");
+    listarConjuntos(uf);
+    imprimirEstatisticas(uf);
+    
+    // Realizar algumas operações de união
+    printf("=== Operações de União ===\n");
+    unionPorRank(uf, 0, 1);
+    unionPorRank(uf, 2, 3);
+    unionPorRank(uf, 0, 2);  // Une {0,1} com {2,3}
+    unionPorRank(uf, 4, 5);
+    unionPorRank(uf, 6, 7);
+    unionPorRank(uf, 4, 6);  // Une {4,5} com {6,7}
+    
+    printf("\n");
+    listarConjuntos(uf);
+    
+    // Testar conectividade
+    printf("=== Testes de Conectividade ===\n");
+    printf("0 e 3 conectados: %s\n", conectados(uf, 0, 3) ? "Sim" : "Não");
+    printf("1 e 2 conectados: %s\n", conectados(uf, 1, 2) ? "Sim" : "Não");
+    printf("0 e 4 conectados: %s\n", conectados(uf, 0, 4) ? "Sim" : "Não");
+    printf("5 e 7 conectados: %s\n", conectados(uf, 5, 7) ? "Sim" : "Não");
+    printf("8 e 9 conectados: %s\n", conectados(uf, 8, 9) ? "Sim" : "Não");
+    
+    // Tamanhos dos conjuntos
+    printf("\n=== Tamanhos dos Conjuntos ===\n");
+    for (int i = 0; i < 10; i++) {
+        printf("Conjunto contendo %d tem tamanho: %d\n", i, tamanhoConjunto(uf, i));
+    }
+    
+    // Unir mais conjuntos
+    printf("\n=== Mais Uniões ===\n");
+    unionPorRank(uf, 0, 4);  // Une grandes conjuntos
+    unionPorRank(uf, 8, 9);  // Une elementos isolados
+    
+    printf("\nEstado após mais uniões:\n");
+    listarConjuntos(uf);
+    imprimirEstatisticas(uf);
+    
+    // Demonstração do algoritmo de Kruskal
+    printf("=== Demonstração: Algoritmo de Kruskal ===\n");
+    
+    Aresta arestas[] = {
+        {0, 1, 4}, {0, 7, 8}, {1, 2, 8}, {1, 7, 11},
+        {2, 3, 7}, {2, 8, 2}, {2, 5, 4}, {3, 4, 9},
+        {3, 5, 14}, {4, 5, 10}, {5, 6, 2}, {6, 7, 1},
+        {6, 8, 6}, {7, 8, 7}
+    };
+    
+    int numArestas = sizeof(arestas) / sizeof(arestas[0]);
+    algoritmoKruskal(arestas, numArestas, 9);
+    
+    // Demonstração: Detecção de ciclos
+    Aresta arestasCiclo[] = {
+        {0, 1, 1}, {1, 2, 1}, {2, 3, 1}, {3, 0, 1}, {0, 4, 1}
+    };
+    int numArestasCiclo = sizeof(arestasCiclo) / sizeof(arestasCiclo[0]);
+    temCiclo(arestasCiclo, numArestasCiclo, 5);
+    
+    // Demonstração: Componentes conexas
+    Aresta arestasComponentes[] = {
+        {0, 1, 1}, {2, 3, 1}, {4, 5, 1}, {6, 7, 1}
+    };
+    int numArestasComponentes = sizeof(arestasComponentes) / sizeof(arestasComponentes[0]);
+    contarComponentesConexas(arestasComponentes, numArestasComponentes, 8);
+    
+    // Comparação de desempenho: Find com e sem path compression
+    printf("=== Teste de Desempenho ===\n");
+    UnionFind* ufTeste = criarUnionFind(1000);
+    if (ufTeste) {
+        // Criar uma cadeia longa
+        for (int i = 0; i < 999; i++) {
+            ufTeste->pai[i + 1] = i;
+        }
+        
+        printf("Operações antes da compressão de caminho:\n");
+        long long opAntes = ufTeste->operacoes;
+        find(ufTeste, 999);
+        printf("Operações para find(999): %lld\n", ufTeste->operacoes - opAntes);
+        
+        opAntes = ufTeste->operacoes;
+        find(ufTeste, 999);  // Segunda vez (com path compression)
+        printf("Operações para find(999) após compressão: %lld\n", ufTeste->operacoes - opAntes);
+        
+        liberarUnionFind(ufTeste);
+    }
+    
+    // Liberar memória
+    liberarUnionFind(uf);
+    
+    return 0;
+}
+```
+
+## Otimizações da Estrutura Union-Find
+
+### 1. Path Compression (Compressão de Caminho)
+Durante a operação Find, todos os nós no caminho para a raiz são redirecionados para apontar diretamente para a raiz.
+
+```c
+// Benefício: Reduz a altura da árvore para futuras operações
+int find(UnionFind* uf, int x) {
+    if (uf->pai[x] != x) {
+        uf->pai[x] = find(uf, uf->pai[x]); // Path compression
+    }
+    return uf->pai[x];
+}
+```
+
+### 2. Union by Rank
+Une sempre a árvore menor à árvore maior (baseado na altura).
+
+```c
+// Benefício: Mantém as árvores balanceadas
+if (uf->rank[raizX] < uf->rank[raizY]) {
+    uf->pai[raizX] = raizY;
+} else if (uf->rank[raizX] > uf->rank[raizY]) {
+    uf->pai[raizY] = raizX;
+} else {
+    uf->pai[raizY] = raizX;
+    uf->rank[raizX]++;
+}
+```
+
+### 3. Union by Size
+Une sempre o conjunto menor ao conjunto maior (baseado no número de elementos).
+
+## Análise de Complexidade
+
+| Operação | Sem Otimização | Com Otimizações |
+|----------|---------------|------------------|
+| Find | O(n) | O(α(n))* |
+| Union | O(n) | O(α(n))* |
+| Conectados | O(n) | O(α(n))* |
+
+*α(n) é a função inversa de Ackermann, que cresce extremamente devagar e é praticamente constante para valores práticos.
+
+### Complexidade Amortizada
+Com path compression e union by rank, o custo amortizado de m operações em n elementos é O(m × α(n)).
+
+## Aplicações Práticas
+
+### 1. **Algoritmos de Grafo**
+- Algoritmo de Kruskal para Árvore Geradora Mínima
+- Detecção de ciclos em grafos não-direcionados
+- Encontrar componentes conexas
+
+### 2. **Processamento de Imagens**
+- Segmentação de imagens
+- Rotulação de componentes conectadas
+- Análise de regiões
+
+### 3. **Redes e Conectividade**
+- Verificar conectividade de rede
+- Clustering de dados
+- Análise de percolação
+
+### 4. **Jogos e Simulações**
+- Geração de labirintos
+- Simulações de percolação
+- Jogos de conexão (como Hex)
+
+### 5. **Sistemas Distribuídos**
+- Detecção de partições de rede
+- Consenso em sistemas distribuídos
+- Manutenção de grupos de réplicas
+
+### 6. **Bioinformática**
+- Análise de clusters de genes
+- Reconstrução filogenética
+- Análise de redes de interação
+
+## Variações da Estrutura
+
+### 1. **Union-Find com Rollback**
+```c
+typedef struct {
+    int elemento;
+    int paiAntigo;
+    int rankAntigo;
+    int tamanhoAntigo;
+} OperacaoHistorico;
+```
+
+### 2. **Union-Find Ponderado**
+```c
+typedef struct {
+    int* pai;
+    int* rank;
+    double* peso; // Peso das conexões
+} UnionFindPonderado;
+```
+
+### 3. **Union-Find Persistente**
+Mantém versões históricas da estrutura para consultas temporais.
+
+## Vantagens e Limitações
+
+### Vantagens:
+- Operações extremamente eficientes com otimizações
+- Implementação relativamente simples
+- Ideal para problemas de conectividade
+- Suporte natural para operações de conjunto
+
+### Limitações:
+- Não suporta operação de "split" eficientemente
+- Não mantém ordem dos elementos
+- Path compression torna a estrutura não-persistente
+- Não é adequada quando precisamos de informações sobre o caminho
+
+## Comparação com Outras Estruturas
+
+| Estrutura | Find | Union | Memória | Uso Principal |
+|-----------|------|-------|---------|---------------|
+| Union-Find | O(α(n)) | O(α(n)) | O(n) | Conectividade |
+| Árvore | O(log n) | O(log n) | O(n) | Busca ordenada |
+| Hash Set | O(1) | N/A | O(n) | Pertencimento |
+| Lista Ligada | O(n) | O(1) | O(n) | Sequencial |

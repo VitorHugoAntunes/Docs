@@ -1,0 +1,804 @@
+---
+id: dag-estrutura
+title: Grafo Direcionado Acíclico (DAG)
+slug: dag-estrutura
+category: Grafos
+description: Aprenda sobre Grafos Direcionados Acíclicos (DAG), suas propriedades, algoritmos e aplicações práticas.
+order: 5
+---
+
+# Grafo Direcionado Acíclico (DAG)
+
+Aprenda sobre Grafos Direcionados Acíclicos (DAG), suas propriedades, algoritmos e aplicações práticas.
+
+## Definição
+
+Um Grafo Direcionado Acíclico (DAG - Directed Acyclic Graph) é um grafo direcionado que não possui ciclos. Isso significa que não existe um caminho que comece e termine no mesmo vértice seguindo as direções das arestas. DAGs são fundamentais em muitas aplicações computacionais, especialmente em problemas de ordenação topológica e dependências.
+
+### Propriedades fundamentais:
+- Direcionado: Todas as arestas têm direção específica
+- Acíclico: Não contém ciclos direcionados
+- Ordenação topológica: Sempre possível em DAGs
+- Níveis: Vértices podem ser organizados em níveis hierárquicos
+
+Abaixo temos um bloco de código em C que implementa um DAG com suas operações específicas:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <limits.h>
+
+#define MAX_VERTICES 100
+#define BRANCO 0
+#define CINZA 1
+#define PRETO 2
+
+// Estrutura para representar uma aresta
+typedef struct Aresta {
+    int destino;
+    int peso;
+    struct Aresta* proxima;
+} Aresta;
+
+// Estrutura para representar um vértice
+typedef struct Vertice {
+    int valor;
+    Aresta* adjacentes;
+    int cor;           // Para detecção de ciclos
+    int tempoInicio;   // Para ordenação topológica
+    int tempoFim;      // Para ordenação topológica
+    int grauEntrada;   // Número de arestas que chegam
+} Vertice;
+
+// Estrutura do DAG
+typedef struct DAG {
+    Vertice vertices[MAX_VERTICES];
+    int numVertices;
+    int tempo;         // Para controle de tempo na DFS
+} DAG;
+
+// Estrutura para pilha (usada na ordenação topológica)
+typedef struct Pilha {
+    int itens[MAX_VERTICES];
+    int topo;
+} Pilha;
+
+// Funções auxiliares para pilha
+void inicializarPilha(Pilha* pilha) {
+    pilha->topo = -1;
+}
+
+bool pilhaVazia(Pilha* pilha) {
+    return pilha->topo == -1;
+}
+
+void empilhar(Pilha* pilha, int item) {
+    if (pilha->topo < MAX_VERTICES - 1) {
+        pilha->itens[++pilha->topo] = item;
+    }
+}
+
+int desempilhar(Pilha* pilha) {
+    if (!pilhaVazia(pilha)) {
+        return pilha->itens[pilha->topo--];
+    }
+    return -1;
+}
+
+// Função para criar um novo DAG
+DAG* criarDAG(int numVertices) {
+    if (numVertices <= 0 || numVertices > MAX_VERTICES) {
+        printf("Erro: Número de vértices inválido\n");
+        return NULL;
+    }
+    
+    DAG* dag = (DAG*)malloc(sizeof(DAG));
+    if (!dag) return NULL;
+    
+    dag->numVertices = numVertices;
+    dag->tempo = 0;
+    
+    // Inicializar todos os vértices
+    for (int i = 0; i < numVertices; i++) {
+        dag->vertices[i].valor = i;
+        dag->vertices[i].adjacentes = NULL;
+        dag->vertices[i].cor = BRANCO;
+        dag->vertices[i].tempoInicio = 0;
+        dag->vertices[i].tempoFim = 0;
+        dag->vertices[i].grauEntrada = 0;
+    }
+    
+    return dag;
+}
+
+// Função para criar uma nova aresta
+Aresta* criarAresta(int destino, int peso) {
+    Aresta* novaAresta = (Aresta*)malloc(sizeof(Aresta));
+    if (!novaAresta) return NULL;
+    
+    novaAresta->destino = destino;
+    novaAresta->peso = peso;
+    novaAresta->proxima = NULL;
+    
+    return novaAresta;
+}
+
+// Função auxiliar recursiva para detecção de ciclos
+bool temCicloUtil(DAG* dag, int vertice) {
+    // Marcar como visitado (cinza)
+    dag->vertices[vertice].cor = CINZA;
+    
+    // Verificar todos os adjacentes
+    Aresta* atual = dag->vertices[vertice].adjacentes;
+    while (atual != NULL) {
+        int adj = atual->destino;
+        
+        // Se o adjacente é cinza, encontramos um back edge (ciclo)
+        if (dag->vertices[adj].cor == CINZA) {
+            return true;
+        }
+        
+        // Se o adjacente é branco e tem ciclo na recursão
+        if (dag->vertices[adj].cor == BRANCO && temCicloUtil(dag, adj)) {
+            return true;
+        }
+        
+        atual = atual->proxima;
+    }
+    
+    // Marcar como processado (preto)
+    dag->vertices[vertice].cor = PRETO;
+    return false;
+}
+
+// Função para verificar se o grafo tem ciclos
+bool temCiclo(DAG* dag) {
+    if (!dag) return false;
+    
+    // Resetar cores
+    for (int i = 0; i < dag->numVertices; i++) {
+        dag->vertices[i].cor = BRANCO;
+    }
+    
+    // Verificar ciclos a partir de cada vértice não visitado
+    for (int i = 0; i < dag->numVertices; i++) {
+        if (dag->vertices[i].cor == BRANCO) {
+            if (temCicloUtil(dag, i)) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+// Função para adicionar aresta (com verificação de ciclos)
+bool adicionarAresta(DAG* dag, int origem, int destino, int peso) {
+    if (!dag || origem >= dag->numVertices || destino >= dag->numVertices || origem < 0 || destino < 0) {
+        printf("Erro: Vértices inválidos!\n");
+        return false;
+    }
+    
+    // Criar nova aresta temporariamente
+    Aresta* novaAresta = criarAresta(destino, peso);
+    if (!novaAresta) {
+        printf("Erro: Falha na alocação de memória\n");
+        return false;
+    }
+    
+    // Adicionar aresta temporariamente
+    novaAresta->proxima = dag->vertices[origem].adjacentes;
+    dag->vertices[origem].adjacentes = novaAresta;
+    dag->vertices[destino].grauEntrada++;
+    
+    // Verificar se criou um ciclo
+    if (temCiclo(dag)) {
+        printf("Erro: Aresta (%d -> %d) criaria um ciclo!\n", origem, destino);
+        
+        // Remover a aresta que foi adicionada
+        dag->vertices[origem].adjacentes = novaAresta->proxima;
+        dag->vertices[destino].grauEntrada--;
+        free(novaAresta);
+        return false;
+    }
+    
+    printf("Aresta (%d -> %d, peso=%d) adicionada com sucesso\n", origem, destino, peso);
+    return true;
+}
+
+// Função para remover uma aresta
+bool removerAresta(DAG* dag, int origem, int destino) {
+    if (!dag || origem >= dag->numVertices || destino >= dag->numVertices || origem < 0 || destino < 0) {
+        printf("Erro: Vértices inválidos!\n");
+        return false;
+    }
+    
+    Aresta* atual = dag->vertices[origem].adjacentes;
+    Aresta* anterior = NULL;
+    
+    while (atual != NULL && atual->destino != destino) {
+        anterior = atual;
+        atual = atual->proxima;
+    }
+    
+    if (atual == NULL) {
+        printf("Aresta (%d -> %d) não encontrada\n", origem, destino);
+        return false;
+    }
+    
+    // Remover aresta
+    if (anterior == NULL) {
+        dag->vertices[origem].adjacentes = atual->proxima;
+    } else {
+        anterior->proxima = atual->proxima;
+    }
+    
+    dag->vertices[destino].grauEntrada--;
+    free(atual);
+    
+    printf("Aresta (%d -> %d) removida com sucesso\n", origem, destino);
+    return true;
+}
+
+// Função auxiliar para DFS na ordenação topológica
+void dfsTopologicaUtil(DAG* dag, int vertice, Pilha* pilha) {
+    dag->vertices[vertice].cor = PRETO;
+    
+    // Visitar todos os adjacentes
+    Aresta* atual = dag->vertices[vertice].adjacentes;
+    while (atual != NULL) {
+        if (dag->vertices[atual->destino].cor == BRANCO) {
+            dfsTopologicaUtil(dag, atual->destino, pilha);
+        }
+        atual = atual->proxima;
+    }
+    
+    // Adicionar à pilha após processar todos os descendentes
+    empilhar(pilha, vertice);
+}
+
+// Função para ordenação topológica usando DFS
+void ordenacaoTopologicaDFS(DAG* dag) {
+    if (!dag) return;
+    
+    printf("=== Ordenação Topológica (DFS) ===\n");
+    
+    // Resetar cores
+    for (int i = 0; i < dag->numVertices; i++) {
+        dag->vertices[i].cor = BRANCO;
+    }
+    
+    Pilha pilha;
+    inicializarPilha(&pilha);
+    
+    // Executar DFS para todos os vértices não visitados
+    for (int i = 0; i < dag->numVertices; i++) {
+        if (dag->vertices[i].cor == BRANCO) {
+            dfsTopologicaUtil(dag, i, &pilha);
+        }
+    }
+    
+    // Imprimir resultado
+    printf("Ordem topológica: ");
+    while (!pilhaVazia(&pilha)) {
+        printf("%d ", desempilhar(&pilha));
+    }
+    printf("\n\n");
+}
+
+// Função para ordenação topológica usando algoritmo de Kahn
+void ordenacaoTopologicaKahn(DAG* dag) {
+    if (!dag) return;
+    
+    printf("=== Ordenação Topológica (Kahn) ===\n");
+    
+    // Criar cópia do grau de entrada
+    int grauEntrada[MAX_VERTICES];
+    for (int i = 0; i < dag->numVertices; i++) {
+        grauEntrada[i] = dag->vertices[i].grauEntrada;
+    }
+    
+    // Fila para vértices com grau de entrada 0
+    int fila[MAX_VERTICES];
+    int inicio = 0, fim = 0;
+    
+    // Adicionar todos os vértices com grau de entrada 0
+    for (int i = 0; i < dag->numVertices; i++) {
+        if (grauEntrada[i] == 0) {
+            fila[fim++] = i;
+        }
+    }
+    
+    printf("Ordem topológica: ");
+    int contador = 0;
+    
+    while (inicio < fim) {
+        int u = fila[inicio++];
+        printf("%d ", u);
+        contador++;
+        
+        // Para cada adjacente de u
+        Aresta* atual = dag->vertices[u].adjacentes;
+        while (atual != NULL) {
+            int v = atual->destino;
+            grauEntrada[v]--;
+            
+            // Se grau de entrada ficou 0, adicionar à fila
+            if (grauEntrada[v] == 0) {
+                fila[fim++] = v;
+            }
+            
+            atual = atual->proxima;
+        }
+    }
+    
+    if (contador != dag->numVertices) {
+        printf("\nERRO: O grafo contém ciclos!");
+    }
+    printf("\n\n");
+}
+
+// Função para encontrar o caminho mais longo em DAG
+void caminhoMaisLongo(DAG* dag, int origem) {
+    if (!dag || origem >= dag->numVertices || origem < 0) {
+        printf("Erro: Origem inválida!\n");
+        return;
+    }
+    
+    printf("=== Caminho Mais Longo a partir do vértice %d ===\n", origem);
+    
+    // Inicializar distâncias
+    int dist[MAX_VERTICES];
+    for (int i = 0; i < dag->numVertices; i++) {
+        dist[i] = INT_MIN;
+    }
+    dist[origem] = 0;
+    
+    // Obter ordenação topológica
+    for (int i = 0; i < dag->numVertices; i++) {
+        dag->vertices[i].cor = BRANCO;
+    }
+    
+    Pilha pilha;
+    inicializarPilha(&pilha);
+    
+    for (int i = 0; i < dag->numVertices; i++) {
+        if (dag->vertices[i].cor == BRANCO) {
+            dfsTopologicaUtil(dag, i, &pilha);
+        }
+    }
+    
+    // Processar vértices em ordem topológica
+    while (!pilhaVazia(&pilha)) {
+        int u = desempilhar(&pilha);
+        
+        if (dist[u] != INT_MIN) {
+            Aresta* atual = dag->vertices[u].adjacentes;
+            while (atual != NULL) {
+                int v = atual->destino;
+                if (dist[u] + atual->peso > dist[v]) {
+                    dist[v] = dist[u] + atual->peso;
+                }
+                atual = atual->proxima;
+            }
+        }
+    }
+    
+    // Imprimir resultados
+    for (int i = 0; i < dag->numVertices; i++) {
+        if (dist[i] == INT_MIN) {
+            printf("Vértice %d: Inacessível\n", i);
+        } else {
+            printf("Vértice %d: Distância %d\n", i, dist[i]);
+        }
+    }
+    printf("\n");
+}
+
+// Função para encontrar o caminho mais curto em DAG
+void caminhoMaisCurto(DAG* dag, int origem) {
+    if (!dag || origem >= dag->numVertices || origem < 0) {
+        printf("Erro: Origem inválida!\n");
+        return;
+    }
+    
+    printf("=== Caminho Mais Curto a partir do vértice %d ===\n", origem);
+    
+    // Inicializar distâncias
+    int dist[MAX_VERTICES];
+    for (int i = 0; i < dag->numVertices; i++) {
+        dist[i] = INT_MAX;
+    }
+    dist[origem] = 0;
+    
+    // Obter ordenação topológica
+    for (int i = 0; i < dag->numVertices; i++) {
+        dag->vertices[i].cor = BRANCO;
+    }
+    
+    Pilha pilha;
+    inicializarPilha(&pilha);
+    
+    for (int i = 0; i < dag->numVertices; i++) {
+        if (dag->vertices[i].cor == BRANCO) {
+            dfsTopologicaUtil(dag, i, &pilha);
+        }
+    }
+    
+    // Processar vértices em ordem topológica
+    while (!pilhaVazia(&pilha)) {
+        int u = desempilhar(&pilha);
+        
+        if (dist[u] != INT_MAX) {
+            Aresta* atual = dag->vertices[u].adjacentes;
+            while (atual != NULL) {
+                int v = atual->destino;
+                if (dist[u] + atual->peso < dist[v]) {
+                    dist[v] = dist[u] + atual->peso;
+                }
+                atual = atual->proxima;
+            }
+        }
+    }
+    
+    // Imprimir resultados
+    for (int i = 0; i < dag->numVertices; i++) {
+        if (dist[i] == INT_MAX) {
+            printf("Vértice %d: Inacessível\n", i);
+        } else {
+            printf("Vértice %d: Distância %d\n", i, dist[i]);
+        }
+    }
+    printf("\n");
+}
+
+// Função para contar caminhos entre dois vértices
+int contarCaminhosUtil(DAG* dag, int atual, int destino, int memo[]) {
+    if (atual == destino) {
+        return 1;
+    }
+    
+    if (memo[atual] != -1) {
+        return memo[atual];
+    }
+    
+    int totalCaminhos = 0;
+    Aresta* adj = dag->vertices[atual].adjacentes;
+    
+    while (adj != NULL) {
+        totalCaminhos += contarCaminhosUtil(dag, adj->destino, destino, memo);
+        adj = adj->proxima;
+    }
+    
+    memo[atual] = totalCaminhos;
+    return totalCaminhos;
+}
+
+int contarCaminhos(DAG* dag, int origem, int destino) {
+    if (!dag || origem >= dag->numVertices || destino >= dag->numVertices || origem < 0 || destino < 0) {
+        return 0;
+    }
+    
+    int memo[MAX_VERTICES];
+    for (int i = 0; i < dag->numVertices; i++) {
+        memo[i] = -1;
+    }
+    
+    return contarCaminhosUtil(dag, origem, destino, memo);
+}
+
+// Função para imprimir o DAG
+void imprimirDAG(DAG* dag) {
+    if (!dag) return;
+    
+    printf("=== Estrutura do DAG ===\n");
+    printf("Número de vértices: %d\n", dag->numVertices);
+    
+    for (int i = 0; i < dag->numVertices; i++) {
+        printf("Vértice %d (grau entrada: %d): ", i, dag->vertices[i].grauEntrada);
+        
+        Aresta* atual = dag->vertices[i].adjacentes;
+        if (atual == NULL) {
+            printf("sem adjacentes");
+        } else {
+            while (atual != NULL) {
+                printf("->%d(peso=%d) ", atual->destino, atual->peso);
+                atual = atual->proxima;
+            }
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+
+// Função para verificar propriedades do DAG
+void verificarPropriedades(DAG* dag) {
+    if (!dag) return;
+    
+    printf("=== Propriedades do DAG ===\n");
+    
+    // Verificar se é realmente acíclico
+    bool acíclico = !temCiclo(dag);
+    printf("É acíclico: %s\n", acíclico ? "Sim" : "Não");
+    
+    // Contar arestas
+    int totalArestas = 0;
+    for (int i = 0; i < dag->numVertices; i++) {
+        Aresta* atual = dag->vertices[i].adjacentes;
+        while (atual != NULL) {
+            totalArestas++;
+            atual = atual->proxima;
+        }
+    }
+    printf("Total de arestas: %d\n", totalArestas);
+    
+    // Encontrar vértices fonte (grau entrada 0)
+    printf("Vértices fonte (grau entrada 0): ");
+    int numFontes = 0;
+    for (int i = 0; i < dag->numVertices; i++) {
+        if (dag->vertices[i].grauEntrada == 0) {
+            printf("%d ", i);
+            numFontes++;
+        }
+    }
+    if (numFontes == 0) printf("nenhum");
+    printf("\n");
+    
+    // Encontrar vértices sumidouro (sem arestas saindo)
+    printf("Vértices sumidouro (grau saída 0): ");
+    int numSumidouros = 0;
+    for (int i = 0; i < dag->numVertices; i++) {
+        if (dag->vertices[i].adjacentes == NULL) {
+            printf("%d ", i);
+            numSumidouros++;
+        }
+    }
+    if (numSumidouros == 0) printf("nenhum");
+    printf("\n\n");
+}
+
+// Função para liberar memória do DAG
+void liberarDAG(DAG* dag) {
+    if (!dag) return;
+    
+    for (int i = 0; i < dag->numVertices; i++) {
+        Aresta* atual = dag->vertices[i].adjacentes;
+        while (atual != NULL) {
+            Aresta* temp = atual;
+            atual = atual->proxima;
+            free(temp);
+        }
+    }
+// Função principal para demonstrar o DAG
+int main() {
+    printf("=== Demonstração de Grafo Direcionado Acíclico (DAG) ===\n\n");
+    
+    // Criar um DAG com 7 vértices
+    DAG* dag = criarDAG(7);
+    if (!dag) {
+        printf("Erro ao criar DAG\n");
+        return 1;
+    }
+    
+    printf("=== Construção do DAG ===\n");
+    
+    // Adicionar arestas válidas (que não criam ciclos)
+    adicionarAresta(dag, 0, 1, 2);  // Tarefa 0 -> Tarefa 1
+    adicionarAresta(dag, 0, 2, 3);  // Tarefa 0 -> Tarefa 2
+    adicionarAresta(dag, 1, 3, 4);  // Tarefa 1 -> Tarefa 3
+    adicionarAresta(dag, 1, 4, 1);  // Tarefa 1 -> Tarefa 4
+    adicionarAresta(dag, 2, 4, 2);  // Tarefa 2 -> Tarefa 4
+    adicionarAresta(dag, 2, 5, 5);  // Tarefa 2 -> Tarefa 5
+    adicionarAresta(dag, 3, 6, 3);  // Tarefa 3 -> Tarefa 6
+    adicionarAresta(dag, 4, 6, 1);  // Tarefa 4 -> Tarefa 6
+    adicionarAresta(dag, 5, 6, 2);  // Tarefa 5 -> Tarefa 6
+    
+    printf("\n");
+    
+    // Tentar adicionar uma aresta que criaria um ciclo
+    printf("Tentando adicionar aresta que criaria ciclo:\n");
+    adicionarAresta(dag, 6, 0, 1);  // Isso criaria um ciclo
+    printf("\n");
+    
+    // Imprimir estrutura do DAG
+    imprimirDAG(dag);
+    
+    // Verificar propriedades
+    verificarPropriedades(dag);
+    
+    // Demonstrar ordenações topológicas
+    ordenacaoTopologicaDFS(dag);
+    ordenacaoTopologicaKahn(dag);
+    
+    // Demonstrar algoritmos de caminho
+    caminhoMaisCurto(dag, 0);
+    caminhoMaisLongo(dag, 0);
+    
+    // Contar caminhos entre vértices específicos
+    printf("=== Contagem de Caminhos ===\n");
+    printf("Caminhos do vértice 0 para 6: %d\n", contarCaminhos(dag, 0, 6));
+    printf("Caminhos do vértice 1 para 6: %d\n", contarCaminhos(dag, 1, 6));
+    printf("Caminhos do vértice 2 para 6: %d\n", contarCaminhos(dag, 2, 6));
+    printf("\n");
+    
+    // Demonstrar remoção de aresta
+    printf("=== Teste de Remoção ===\n");
+    printf("Removendo aresta (2 -> 5):\n");
+    removerAresta(dag, 2, 5);
+    
+    printf("Estrutura após remoção:\n");
+    imprimirDAG(dag);
+    
+    printf("Nova ordenação topológica após remoção:\n");
+    ordenacaoTopologicaKahn(dag);
+    
+    // Criar um segundo DAG para demonstrar diferentes cenários
+    printf("=== DAG de Dependências de Compilação ===\n");
+    DAG* dagCompilacao = criarDAG(6);
+    
+    // Simular dependências de compilação de arquivos
+    // 0: main.c, 1: utils.c, 2: math.c, 3: utils.h, 4: math.h, 5: config.h
+    adicionarAresta(dagCompilacao, 5, 4, 1);  // config.h -> math.h
+    adicionarAresta(dagCompilacao, 5, 3, 1);  // config.h -> utils.h
+    adicionarAresta(dagCompilacao, 4, 2, 1);  // math.h -> math.c
+    adicionarAresta(dagCompilacao, 3, 1, 1);  // utils.h -> utils.c
+    adicionarAresta(dagCompilacao, 2, 0, 1);  // math.c -> main.c
+    adicionarAresta(dagCompilacao, 1, 0, 1);  // utils.c -> main.c
+    
+    printf("Estrutura de dependências:\n");
+    imprimirDAG(dagCompilacao);
+    
+    printf("Ordem de compilação (Topológica):\n");
+    ordenacaoTopologicaKahn(dagCompilacao);
+    
+    // Verificar propriedades do DAG de compilação
+    verificarPropriedades(dagCompilacao);
+    
+    // Liberar memória
+    liberarDAG(dag);
+    liberarDAG(dagCompilacao);
+    
+    return 0;
+}
+
+## Algoritmos Importantes em DAGs
+
+### 1. Ordenação Topológica
+A ordenação topológica é uma ordenação linear dos vértices de um DAG onde, para cada aresta direcionada (u,v), o vértice u aparece antes do vértice v na ordenação.
+
+Algoritmos:
+- DFS-based: Usa busca em profundidade e pilha
+- Kahns Algorithm:** Usa grau de entrada e fila
+
+### 2. Caminho Mais Longo/Curto
+Em DAGs, podemos encontrar caminhos mais longos e mais curtos em tempo linear usando ordenação topológica.
+
+```c
+// Pseudocódigo para caminho mais longo
+void caminhoMaisLongo(DAG* dag, int origem) {
+    1. Inicializar dist[origem] = 0, outros = -∞
+    2. Obter ordenação topológica
+    3. Para cada vértice u na ordem topológica:
+          Para cada adjacente v de u:
+              dist[v] = max(dist[v], dist[u] + peso(u,v))
+}
+```
+
+## Representações Alternativas
+
+### 1. Matriz de Adjacência com Detecção de Ciclos
+```c
+typedef struct {
+    int matriz[MAX_VERTICES][MAX_VERTICES];
+    int numVertices;
+    int grauEntrada[MAX_VERTICES];
+} DAGMatriz;
+```
+
+### 2. Lista de Arestas Ordenada
+```c
+typedef struct {
+    int origem, destino, peso;
+} ArestaDAG;
+
+typedef struct {
+    ArestaDAG* arestas;
+    int numArestas;
+    int numVertices;
+    int* grauEntrada;
+} DAGArestas;
+```
+
+## Complexidades dos Algoritmos
+
+| Algoritmo | Complexidade de Tempo | Complexidade de Espaço |
+|-----------|----------------------|------------------------|
+| Detecção de Ciclo | O(V + E) | O(V) |
+| Ordenação Topológica (DFS) | O(V + E) | O(V) |
+| Ordenação Topológica (Kahn) | O(V + E) | O(V) |
+| Caminho Mais Longo | O(V + E) | O(V) |
+| Caminho Mais Curto | O(V + E) | O(V) |
+| Contagem de Caminhos | O(V + E) | O(V) |
+
+Onde:
+- **V**: número de vértices
+- **E**: número de arestas
+
+## Aplicações Práticas
+
+### 1. Sistemas de Build e Compilação
+- Dependências entre arquivos de código
+- Ordem de compilação de módulos
+- Makefiles e sistemas de build
+
+### 2. Escalonamento de Tarefas
+- Project scheduling (PERT/CPM)
+- Dependências entre tarefas
+- Caminho crítico em projetos
+
+### 3. Sistemas de Versioning e Git
+- Histórico de commits
+- Merge de branches
+- Resolução de dependências
+
+### 4. Análise de Precedência
+- Pré-requisitos de disciplinas
+- Ordem de cursos em currículos
+- Dependências em workflows
+
+### 5. Sistemas de Cache
+- Invalidação de cache
+- Dependências entre objetos cachados
+- Sistemas de memoização
+
+### 6. Análise de Dados e ETL
+- Pipeline de processamento de dados
+- Transformações dependentes
+- Sistemas de data warehousing
+
+### 7. Redes de Dependências
+- Gestão de pacotes (npm, pip, maven)
+- Resolução de dependências de software
+- Sistemas de distribuição
+
+## Vantagens dos DAGs
+
+### Vantagens:
+- Algoritmos eficientes para muitos problemas
+- Ordenação topológica sempre possível
+- Caminhos mais longos/curtos em tempo linear
+- Estrutura hierárquica natural
+- Não há problema de ciclos infinitos
+
+### Limitações:
+- Restrição de não ter ciclos pode ser limitante
+- Alguns problemas reais naturalmente têm ciclos
+- Manutenção da propriedade acíclica requer verificação
+- Pode ser difícil modelar algumas relações bidirecionais
+
+## Variações e Extensões
+
+### 1. DAG Ponderado
+Já implementado no código acima, onde cada aresta tem um peso associado.
+
+### 2. DAG com Múltiplas Origens/Destinos
+```c
+typedef struct {
+    int* origens;
+    int* destinos;
+    int numOrigens;
+    int numDestinos;
+} DAGMultipontos;
+```
+
+### 3. DAG com Atributos de Vértice
+```c
+typedef struct VerticeAtributos {
+    int id;
+    char* nome;
+    int prioridade;
+    double peso;
+    void* dados;
+} VerticeAtributos;
+```

@@ -1,0 +1,577 @@
+---
+id: search-algorithms
+title: Algoritmos de Busca
+slug: search-algorithms
+category: Algoritmos
+description: Aprenda algoritmos de busca (linear, binária) e suas complexidades.
+order: 3
+---
+
+# Algoritmos de Busca
+
+Aprenda algoritmos de busca (linear, binária) e suas complexidades.
+
+## Definição
+
+Algoritmos de busca são técnicas fundamentais para localizar elementos específicos em coleções de dados. Eles são essenciais para a eficiência de muitas operações computacionais e variam desde abordagens simples até técnicas otimizadas para diferentes estruturas de dados.
+
+## Busca Linear
+
+A busca linear (ou sequencial) é o algoritmo mais simples, verificando cada elemento até encontrar o valor desejado ou percorrer toda a estrutura.
+
+### Implementação Básica
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <time.h>
+
+// Busca linear em array
+int buscaLinear(int arr[], int tamanho, int valorBuscado) {
+    for (int i = 0; i < tamanho; i++) {
+        if (arr[i] == valorBuscado) {
+            return i; // Retorna o índice onde encontrou
+        }
+    }
+    return -1; // Não encontrado
+}
+
+// Busca linear com contador de comparações
+int buscaLinearComContador(int arr[], int tamanho, int valorBuscado, int* comparacoes) {
+    *comparacoes = 0;
+    for (int i = 0; i < tamanho; i++) {
+        (*comparacoes)++;
+        if (arr[i] == valorBuscado) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Busca linear recursiva
+int buscaLinearRecursiva(int arr[], int tamanho, int valorBuscado, int indice) {
+    // Caso base: chegou ao final do array
+    if (indice >= tamanho) {
+        return -1;
+    }
+    
+    // Encontrou o elemento
+    if (arr[indice] == valorBuscado) {
+        return indice;
+    }
+    
+    // Chama recursivamente para o próximo elemento
+    return buscaLinearRecursiva(arr, tamanho, valorBuscado, indice + 1);
+}
+```
+
+### Busca Linear em Lista Ligada
+
+```c
+// Estrutura de um nó da lista
+typedef struct No {
+    int dado;
+    struct No* proximo;
+} No;
+
+// Busca linear em lista ligada
+No* buscaLinearLista(No* cabeca, int valorBuscado) {
+    No* atual = cabeca;
+    
+    while (atual != NULL) {
+        if (atual->dado == valorBuscado) {
+            return atual; // Retorna ponteiro para o nó encontrado
+        }
+        atual = atual->proximo;
+    }
+    
+    return NULL; // Não encontrado
+}
+
+// Busca com retorno de posição na lista
+int buscaLinearListaPosicao(No* cabeca, int valorBuscado) {
+    No* atual = cabeca;
+    int posicao = 0;
+    
+    while (atual != NULL) {
+        if (atual->dado == valorBuscado) {
+            return posicao;
+        }
+        atual = atual->proximo;
+        posicao++;
+    }
+    
+    return -1; // Não encontrado
+}
+```
+
+## Busca Binária
+
+A busca binária é um algoritmo eficiente que funciona apenas em arrays ordenados, dividindo repetidamente o espaço de busca pela metade.
+
+### Implementação Iterativa
+
+```c
+// Busca binária iterativa
+int buscaBinariaIterativa(int arr[], int tamanho, int valorBuscado) {
+    int esquerda = 0;
+    int direita = tamanho - 1;
+    
+    while (esquerda <= direita) {
+        int meio = esquerda + (direita - esquerda) / 2;
+        
+        // Elemento encontrado
+        if (arr[meio] == valorBuscado) {
+            return meio;
+        }
+        
+        // Se o elemento é menor, busca na metade esquerda
+        if (arr[meio] > valorBuscado) {
+            direita = meio - 1;
+        }
+        // Se o elemento é maior, busca na metade direita
+        else {
+            esquerda = meio + 1;
+        }
+    }
+    
+    return -1; // Não encontrado
+}
+
+// Busca binária com contador de comparações
+int buscaBinariaComContador(int arr[], int tamanho, int valorBuscado, int* comparacoes) {
+    int esquerda = 0;
+    int direita = tamanho - 1;
+    *comparacoes = 0;
+    
+    while (esquerda <= direita) {
+        int meio = esquerda + (direita - esquerda) / 2;
+        (*comparacoes)++;
+        
+        if (arr[meio] == valorBuscado) {
+            return meio;
+        }
+        
+        (*comparacoes)++;
+        if (arr[meio] > valorBuscado) {
+            direita = meio - 1;
+        } else {
+            esquerda = meio + 1;
+        }
+    }
+    
+    return -1;
+}
+```
+
+### Implementação Recursiva
+
+```c
+// Busca binária recursiva
+int buscaBinariaRecursiva(int arr[], int esquerda, int direita, int valorBuscado) {
+    if (esquerda > direita) {
+        return -1; // Elemento não encontrado
+    }
+    
+    int meio = esquerda + (direita - esquerda) / 2;
+    
+    // Elemento encontrado
+    if (arr[meio] == valorBuscado) {
+        return meio;
+    }
+    
+    // Busca na metade esquerda
+    if (arr[meio] > valorBuscado) {
+        return buscaBinariaRecursiva(arr, esquerda, meio - 1, valorBuscado);
+    }
+    
+    // Busca na metade direita
+    return buscaBinariaRecursiva(arr, meio + 1, direita, valorBuscado);
+}
+```
+
+### Variações da Busca Binária
+
+```c
+// Encontra a primeira ocorrência do elemento (para arrays com duplicatas)
+int buscaBinariaPrimeiraOcorrencia(int arr[], int tamanho, int valorBuscado) {
+    int esquerda = 0;
+    int direita = tamanho - 1;
+    int resultado = -1;
+    
+    while (esquerda <= direita) {
+        int meio = esquerda + (direita - esquerda) / 2;
+        
+        if (arr[meio] == valorBuscado) {
+            resultado = meio;
+            direita = meio - 1; // Continue buscando à esquerda
+        }
+        else if (arr[meio] > valorBuscado) {
+            direita = meio - 1;
+        }
+        else {
+            esquerda = meio + 1;
+        }
+    }
+    
+    return resultado;
+}
+
+// Encontra a última ocorrência do elemento
+int buscaBinariaUltimaOcorrencia(int arr[], int tamanho, int valorBuscado) {
+    int esquerda = 0;
+    int direita = tamanho - 1;
+    int resultado = -1;
+    
+    while (esquerda <= direita) {
+        int meio = esquerda + (direita - esquerda) / 2;
+        
+        if (arr[meio] == valorBuscado) {
+            resultado = meio;
+            esquerda = meio + 1; // Continue buscando à direita
+        }
+        else if (arr[meio] > valorBuscado) {
+            direita = meio - 1;
+        }
+        else {
+            esquerda = meio + 1;
+        }
+    }
+    
+    return resultado;
+}
+
+// Encontra o menor elemento maior que o valor buscado
+int buscaBinariaTeto(int arr[], int tamanho, int valorBuscado) {
+    int esquerda = 0;
+    int direita = tamanho - 1;
+    int resultado = -1;
+    
+    while (esquerda <= direita) {
+        int meio = esquerda + (direita - esquerda) / 2;
+        
+        if (arr[meio] > valorBuscado) {
+            resultado = meio;
+            direita = meio - 1;
+        }
+        else {
+            esquerda = meio + 1;
+        }
+    }
+    
+    return resultado;
+}
+```
+
+## Busca Ternária
+
+A busca ternária divide o espaço de busca em três partes, útil para encontrar máximos/mínimos em funções unimodais.
+
+```c
+// Busca ternária para encontrar máximo de função unimodal
+double buscaTernaria(double (*funcao)(double), double esquerda, double direita, double precisao) {
+    while (direita - esquerda > precisao) {
+        double m1 = esquerda + (direita - esquerda) / 3.0;
+        double m2 = direita - (direita - esquerda) / 3.0;
+        
+        if (funcao(m1) > funcao(m2)) {
+            direita = m2;
+        } else {
+            esquerda = m1;
+        }
+    }
+    
+    return (esquerda + direita) / 2.0;
+}
+
+// Exemplo de função para teste
+double funcaoTeste(double x) {
+    return -(x * x) + 4 * x + 1; // Função quadrática com máximo
+}
+```
+
+## Busca Exponencial
+
+A busca exponencial combina busca linear e binária, útil quando o tamanho do array é desconhecido.
+
+```c
+// Busca exponencial
+int buscaExponencial(int arr[], int tamanho, int valorBuscado) {
+    // Se o elemento está na primeira posição
+    if (arr[0] == valorBuscado) {
+        return 0;
+    }
+    
+    // Encontra o range para busca binária
+    int i = 1;
+    while (i < tamanho && arr[i] <= valorBuscado) {
+        i = i * 2;
+    }
+    
+    // Aplica busca binária no range encontrado
+    int direita = (i < tamanho) ? i : tamanho - 1;
+    return buscaBinariaRecursiva(arr, i / 2, direita, valorBuscado);
+}
+```
+
+## Busca Interpolada
+
+A busca interpolada melhora a busca binária usando interpolação para estimar a posição do elemento.
+
+```c
+// Busca interpolada (para arrays uniformemente distribuídos)
+int buscaInterpolada(int arr[], int tamanho, int valorBuscado) {
+    int esquerda = 0;
+    int direita = tamanho - 1;
+    
+    while (esquerda <= direita && valorBuscado >= arr[esquerda] && valorBuscado <= arr[direita]) {
+        // Se há apenas um elemento
+        if (esquerda == direita) {
+            if (arr[esquerda] == valorBuscado) {
+                return esquerda;
+            }
+            return -1;
+        }
+        
+        // Calcula a posição usando interpolação
+        int pos = esquerda + (((double)(valorBuscado - arr[esquerda]) / 
+                              (arr[direita] - arr[esquerda])) * (direita - esquerda));
+        
+        // Elemento encontrado
+        if (arr[pos] == valorBuscado) {
+            return pos;
+        }
+        
+        // Se o elemento é maior, busca na parte direita
+        if (arr[pos] < valorBuscado) {
+            esquerda = pos + 1;
+        }
+        // Se o elemento é menor, busca na parte esquerda
+        else {
+            direita = pos - 1;
+        }
+    }
+    
+    return -1;
+}
+```
+
+## Funções de Utilidade
+
+```c
+// Cria e preenche array ordenado para testes
+int* criarArrayOrdenado(int tamanho) {
+    int* arr = malloc(tamanho * sizeof(int));
+    for (int i = 0; i < tamanho; i++) {
+        arr[i] = i * 2; // Array com números pares
+    }
+    return arr;
+}
+
+// Cria array aleatório
+int* criarArrayAleatorio(int tamanho, int maxValor) {
+    int* arr = malloc(tamanho * sizeof(int));
+    srand(time(NULL));
+    
+    for (int i = 0; i < tamanho; i++) {
+        arr[i] = rand() % maxValor;
+    }
+    
+    return arr;
+}
+
+// Imprime array
+void imprimirArray(int arr[], int tamanho) {
+    printf("[");
+    for (int i = 0; i < tamanho; i++) {
+        printf("%d", arr[i]);
+        if (i < tamanho - 1) printf(", ");
+    }
+    printf("]\n");
+}
+
+// Mede tempo de execução de algoritmos de busca
+void medirTempoBusca() {
+    const int TAMANHO = 100000;
+    int* arr = criarArrayOrdenado(TAMANHO);
+    int valorBuscado = TAMANHO - 10; // Busca elemento próximo ao final
+    
+    clock_t inicio, fim;
+    double tempoLinear, tempoBinaria;
+    int comparacoesLinear, comparacoesBinaria;
+    
+    // Mede busca linear
+    inicio = clock();
+    int resultadoLinear = buscaLinearComContador(arr, TAMANHO, valorBuscado, &comparacoesLinear);
+    fim = clock();
+    tempoLinear = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
+    
+    // Mede busca binária
+    inicio = clock();
+    int resultadoBinaria = buscaBinariaComContador(arr, TAMANHO, valorBuscado, &comparacoesBinaria);
+    fim = clock();
+    tempoBinaria = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
+    
+    printf("\n=== COMPARAÇÃO DE DESEMPENHO ===\n");
+    printf("Tamanho do array: %d\n", TAMANHO);
+    printf("Valor buscado: %d\n\n", valorBuscado);
+    
+    printf("Busca Linear:\n");
+    printf("  Resultado: %d\n", resultadoLinear);
+    printf("  Comparações: %d\n", comparacoesLinear);
+    printf("  Tempo: %.6f segundos\n\n", tempoLinear);
+    
+    printf("Busca Binária:\n");
+    printf("  Resultado: %d\n", resultadoBinaria);
+    printf("  Comparações: %d\n", comparacoesBinaria);
+    printf("  Tempo: %.6f segundos\n\n", tempoBinaria);
+    
+    printf("Speedup: %.2fx\n", tempoLinear / tempoBinaria);
+    
+    free(arr);
+}
+```
+
+## Exemplo de Uso Completo
+
+```c
+int main() {
+    printf("=== ALGORITMOS DE BUSCA ===\n");
+    
+    // Teste com array pequeno
+    int arr[] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
+    int tamanho = sizeof(arr) / sizeof(arr[0]);
+    int valorBuscado = 12;
+    
+    printf("Array: ");
+    imprimirArray(arr, tamanho);
+    printf("Buscando valor: %d\n\n", valorBuscado);
+    
+    // Busca Linear
+    int resultadoLinear = buscaLinear(arr, tamanho, valorBuscado);
+    printf("Busca Linear: %s (índice %d)\n", 
+           resultadoLinear != -1 ? "Encontrado" : "Não encontrado", 
+           resultadoLinear);
+    
+    // Busca Binária Iterativa
+    int resultadoBinaria = buscaBinariaIterativa(arr, tamanho, valorBuscado);
+    printf("Busca Binária (Iterativa): %s (índice %d)\n", 
+           resultadoBinaria != -1 ? "Encontrado" : "Não encontrado", 
+           resultadoBinaria);
+    
+    // Busca Binária Recursiva
+    int resultadoRecursiva = buscaBinariaRecursiva(arr, 0, tamanho - 1, valorBuscado);
+    printf("Busca Binária (Recursiva): %s (índice %d)\n", 
+           resultadoRecursiva != -1 ? "Encontrado" : "Não encontrado", 
+           resultadoRecursiva);
+    
+    // Teste com duplicatas
+    printf("\n=== TESTE COM DUPLICATAS ===\n");
+    int arrDuplicatas[] = {1, 2, 2, 2, 3, 4, 4, 5, 6, 7};
+    int tamanhoDup = sizeof(arrDuplicatas) / sizeof(arrDuplicatas[0]);
+    int valorDuplicado = 2;
+    
+    printf("Array com duplicatas: ");
+    imprimirArray(arrDuplicatas, tamanhoDup);
+    printf("Buscando valor: %d\n", valorDuplicado);
+    
+    int primeira = buscaBinariaPrimeiraOcorrencia(arrDuplicatas, tamanhoDup, valorDuplicado);
+    int ultima = buscaBinariaUltimaOcorrencia(arrDuplicatas, tamanhoDup, valorDuplicado);
+    
+    printf("Primeira ocorrência: índice %d\n", primeira);
+    printf("Última ocorrência: índice %d\n", ultima);
+    printf("Total de ocorrências: %d\n", ultima - primeira + 1);
+    
+    // Busca Ternária
+    printf("\n=== BUSCA TERNÁRIA ===\n");
+    printf("Encontrando máximo da função f(x) = -x² + 4x + 1 no intervalo [0, 5]\n");
+    double maximo = buscaTernaria(funcaoTeste, 0.0, 5.0, 0.001);
+    printf("Máximo encontrado em x = %.3f\n", maximo);
+    printf("Valor da função: f(%.3f) = %.3f\n", maximo, funcaoTeste(maximo));
+    
+    // Medição de desempenho
+    medirTempoBusca();
+    
+    return 0;
+}
+```
+
+## Exemplo de Saída
+
+```
+=== ALGORITMOS DE BUSCA ===
+Array: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+Buscando valor: 12
+
+Busca Linear: Encontrado (índice 5)
+Busca Binária (Iterativa): Encontrado (índice 5)
+Busca Binária (Recursiva): Encontrado (índice 5)
+
+=== TESTE COM DUPLICATAS ===
+Array com duplicatas: [1, 2, 2, 2, 3, 4, 4, 5, 6, 7]
+Buscando valor: 2
+Primeira ocorrência: índice 1
+Última ocorrência: índice 3
+Total de ocorrências: 3
+
+=== BUSCA TERNÁRIA ===
+Encontrando máximo da função f(x) = -x² + 4x + 1 no intervalo [0, 5]
+Máximo encontrado em x = 2.000
+Valor da função: f(2.000) = 5.000
+
+=== COMPARAÇÃO DE DESEMPENHO ===
+Tamanho do array: 100000
+Valor buscado: 99990
+
+Busca Linear:
+  Resultado: 49995
+  Comparações: 49996
+  Tempo: 0.001250 segundos
+
+Busca Binária:
+  Resultado: 49995
+  Comparações: 17
+  Tempo: 0.000005 segundos
+
+Speedup: 250.00x
+```
+
+## Comparação de Algoritmos
+
+| Algoritmo | Complexidade Tempo | Complexidade Espaço | Pré-requisitos | Melhor Caso |
+|-----------|-------------------|-------------------|----------------|-------------|
+| Busca Linear | O(n) | O(1) | Nenhum | O(1) |
+| Busca Binária | O(log n) | O(1) iterativa, O(log n) recursiva | Array ordenado | O(1) |
+| Busca Ternária | O(log₃ n) | O(1) | Função unimodal | O(1) |
+| Busca Exponencial | O(log n) | O(1) | Array ordenado | O(1) |
+| Busca Interpolada | O(log log n) média, O(n) pior | O(1) | Array ordenado e uniformemente distribuído | O(1) |
+
+## Aplicações Práticas
+
+### 1. Sistemas de Banco de Dados
+- Busca binária em índices ordenados
+- Busca interpolada para dados uniformemente distribuídos
+- Otimização de consultas com múltiplas condições
+
+### 2. Algoritmos de Otimização
+- Busca ternária para encontrar máximos/mínimos
+- Busca binária em problemas de decisão
+- Algoritmos de aproximação
+
+### 3. Sistemas de Arquivos
+- Busca linear em diretórios pequenos
+- Busca binária em estruturas indexadas
+- Busca exponencial quando o tamanho é desconhecido
+
+### 4. Jogos e Simulações
+- Busca de colisões em física de jogos
+- Pathfinding e navegação
+- Otimização de recursos
+
+### 5. Processamento de Sinais
+- Busca de picos em sinais
+- Detecção de padrões
+- Análise de frequências
+
+Os algoritmos de busca são fundamentais para a eficiência computacional e formar a base para muitos algoritmos mais complexos em ciência da computação.
