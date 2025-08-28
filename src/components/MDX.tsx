@@ -1,9 +1,9 @@
 import { ExternalLink } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { AnchorHTMLAttributes, HTMLAttributes, TableHTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react'
 import CustomCodeBlock from './Codeblock'
 import { HeadingWithAnchor } from './HeadingWithAnchor'
+import ZoomableImage from './ZoomableImage'
 
 type HeadingProps = HTMLAttributes<HTMLHeadingElement>
 type ParagraphProps = HTMLAttributes<HTMLParagraphElement>
@@ -11,11 +11,16 @@ type ListProps = HTMLAttributes<HTMLUListElement | HTMLOListElement>
 type ListItemProps = HTMLAttributes<HTMLLIElement>
 type BlockquoteProps = HTMLAttributes<HTMLQuoteElement>
 type CodeProps = HTMLAttributes<HTMLElement>
-type PreProps = HTMLAttributes<HTMLPreElement>
+type PreProps = HTMLAttributes<HTMLPreElement> & {
+  'data-language'?: string
+}
 type AnchorProps = AnchorHTMLAttributes<HTMLAnchorElement>
 type TableProps = TableHTMLAttributes<HTMLTableElement>
 type ThProps = ThHTMLAttributes<HTMLTableHeaderCellElement>
 type TdProps = TdHTMLAttributes<HTMLTableDataCellElement>
+interface CodeBlockProps extends CodeProps {
+  className?: string
+}
 
 const isExternalLink = (href: string): boolean => {
   if (!href) return false
@@ -94,37 +99,42 @@ export const mdxComponents = {
       className="border-l-4 border-blue-500 pl-4 sm:pl-6 py-2 mb-4 sm:mb-6 bg-blue-50 italic text-sm sm:text-base text-gray-700"
     />
   ),
+  pre: (props: PreProps) => {
+    const language = props['data-language'] as string || '';
+
+    if (language) {
+      return (
+        <CustomCodeBlock className={`language-${language}`}>
+          {props.children}
+        </CustomCodeBlock>
+      );
+    }
+
+    return (
+      <div className="max-w-full overflow-x-auto mb-4 sm:mb-6">
+        <pre
+          {...props}
+          className="bg-gray-100 text-gray-800 rounded-lg text-xs sm:text-sm overflow-x-auto whitespace-pre px-2 sm:px-4 py-1.5 sm:py-2"
+        />
+      </div>
+    );
+  },
+
   code: (props: CodeProps) => {
     const className = props.className || ''
     const languageMatch = className.match(/language-(\w+)/)
 
-    if (languageMatch) {
-      const language = languageMatch[1]
-      const code = props.children || ''
-
+    if (!languageMatch) {
       return (
-        <CustomCodeBlock
-          code={typeof code === 'string' ? code.trim() : String(code).trim()}
-          language={language}
+        <code
+          {...props}
+          className="bg-gray-50 text-red-600 rounded px-1 py-0.5 font-mono text-xs sm:text-sm"
         />
       )
     }
 
-    return (
-      <code
-        {...props}
-        className="bg-gray-100 text-red-600 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-mono"
-      />
-    )
+    return <code {...props} />
   },
-  pre: (props: PreProps) => (
-    <div className="max-w-full overflow-x-auto mb-4 sm:mb-6">
-      <pre
-        {...props}
-        className="bg-gray-100 text-gray-800 rounded-lg text-xs sm:text-sm overflow-x-auto whitespace-pre"
-      />
-    </div>
-  ),
   a: (props: AnchorProps) => {
     const href = props.href || ''
 
@@ -178,14 +188,11 @@ export const mdxComponents = {
       600;
 
     return (
-      <Image
+      <ZoomableImage
         src={typeof props.src === 'string' ? props.src : ''}
+        alt={props.alt || 'Imagem'}
         width={width}
         height={height}
-        alt={props.alt || 'Imagem'}
-        className="max-w-full overflow-hidden mb-4 sm:mb-6 h-auto rounded-lg shadow-sm object-contain"
-        loading="lazy"
-        style={{ maxWidth: '100%', height: 'auto' }}
       />
     );
   },
