@@ -4,9 +4,9 @@ import { SearchModalProps, SearchResult } from '@/types';
 import { performSearch } from '@/utils/search';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { SearchContent } from './Search/SearchContent';
-import { SearchFooter } from './Search/SearchFooter';
-import { SearchHeader } from './Search/SearchHeader';
+import { SearchContent } from './SearchContent';
+import { SearchFooter } from './SearchFooter';
+import { SearchHeader } from './SearchHeader';
 
 export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
@@ -70,7 +70,6 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }
   }, [isOpen]);
 
-  // Auto-scroll para o item selecionado
   useEffect(() => {
     if (selectedIndex >= 0 && resultsRef.current) {
       const selectedElement = resultsRef.current.querySelector(`[data-index="${selectedIndex}"]`) as HTMLElement;
@@ -87,14 +86,10 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           const containerHeight = container.clientHeight;
 
           if (isAbove) {
-            // Se o elemento está acima da área visível, rola para cima
-            // Adiciona um pequeno padding para não ficar colado no topo
             container.scrollTo({
               top: Math.max(0, elementOffsetTop - 70),
             });
           } else if (isBelow) {
-            // Se o elemento está abaixo da área visível, rola para baixo
-            // Posiciona o elemento na parte inferior da área visível com padding
             container.scrollTo({
               top: elementOffsetTop - containerHeight + 40,
             });
@@ -120,11 +115,19 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex(prev => (prev < results.length - 1 ? prev + 1 : prev));
+          setSelectedIndex(prev => {
+            const newIndex = prev < results.length - 1 ? prev + 1 : prev;
+            console.log('⬇️ Seta para baixo - Index anterior:', prev, '| Novo index:', newIndex);
+            return newIndex;
+          });
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
+          setSelectedIndex(prev => {
+            const newIndex = prev > 0 ? prev - 1 : -1;
+            console.log('⬆️ Seta para cima - Index anterior:', prev, '| Novo index:', newIndex);
+            return newIndex;
+          });
           break;
         case 'Enter':
           e.preventDefault();
@@ -133,6 +136,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           } else {
             const activeElement = document.activeElement as HTMLElement;
             if (activeElement && 'click' in activeElement) {
+              console.log('⌨️ ENTER pressionado - Clicando em elemento ativo:', activeElement);
               activeElement.click();
             }
           }
@@ -177,27 +181,29 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   }, [query]);
 
   const handleResultClick = (result: SearchResult) => {
-    // Navegar para o resultado
     router.push(result.href);
     onClose();
 
-    // Aplicar offset após navegação
     setTimeout(() => {
-      // Se há hash na URL, encontrar o elemento e fazer scroll com offset
       if (result.href.includes('#')) {
         const hash = result.href.split('#')[1];
         const element = document.getElementById(hash);
         if (element) {
           const elementPosition = element.offsetTop;
-          const offsetPosition = elementPosition - 100; // 100px de offset
+          const offsetPosition = elementPosition - 100;
 
           window.scrollTo({
             top: Math.max(0, offsetPosition),
             behavior: 'smooth',
           });
         }
+      } else {
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth',
+        });
       }
-    }, 100);
+    }, 350);
   };
 
   if (!isOpen) return null;
