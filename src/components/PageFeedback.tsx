@@ -55,7 +55,7 @@ export default function PageFeedback({ slug, className = '' }: PageFeedbackProps
           <button
             onClick={() => handleFeedback('like')}
             disabled={isSubmitting}
-            className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <ThumbsUp className="w-4 h-4" />
             <span>Sim</span>
@@ -64,14 +64,14 @@ export default function PageFeedback({ slug, className = '' }: PageFeedbackProps
           <button
             onClick={() => handleFeedback('dislike')}
             disabled={isSubmitting}
-            className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <ThumbsDown className="w-4 h-4" />
             <span>Não</span>
           </button>
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          Seu feedback nos ajuda a melhorar a documentação
+          Seu feedback ajuda a melhorar a documentação
         </p>
       </div>
     </div>

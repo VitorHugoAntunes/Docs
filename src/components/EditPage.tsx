@@ -10,9 +10,9 @@ interface EditOnGitHubProps {
 
 export default function EditOnGitHub({
   slug,
-  repositoryUrl = 'https://github.com/seu-usuario/seu-repositorio',
+  repositoryUrl = 'https://github.com/VitorHugoAntunes/Docs',
   branch = 'main',
-  docsPath = 'docs',
+  docsPath = 'src/docs',
   className = ''
 }: EditOnGitHubProps) {
   const fileUrl = `${repositoryUrl}/edit/${branch}/${docsPath}/${slug}.mdx`
