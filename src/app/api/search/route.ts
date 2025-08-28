@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
 
     for (const doc of docs) {
       try {
-        const relativePath = `${doc.slug}.mdx`
+        const relativePath = `${doc.originalSlug}.mdx`
         const filePath = path.join(process.cwd(), 'src/docs', relativePath)
         const normalizedPath = path.normalize(filePath)
 
@@ -127,11 +127,11 @@ export async function GET(request: NextRequest) {
         const fileContent = fs.readFileSync(normalizedPath, 'utf8')
         const { content: rawContent } = matter(fileContent)
 
-        const baseHref = `/docs/${doc.slug}`
+        const baseHref = `/docs/${doc.originalSlug}`
         const cleanContent = cleanMarkdownContent(rawContent)
 
         allResults.push({
-          id: doc.slug,
+          id: doc.originalSlug,
           title: doc.title,
           content: cleanContent,
           category: doc.category || 'Geral',
@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
 
           if (heading.content.length > 20) {
             allResults.push({
-              id: `${doc.slug}#${heading.id}`,
+              id: `${doc.originalSlug}#${heading.id}`,
               title: heading.title,
               content: heading.content,
               category: doc.category || 'Geral',
@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
         }
 
       } catch (error) {
-        console.error(`Error processing doc ${doc.slug}:`, error)
+        console.error(`Error processing doc ${doc.originalSlug}:`, error)
         continue
       }
     }
@@ -205,8 +205,6 @@ export async function GET(request: NextRequest) {
     })
 
     const limitedResults = sorted.slice(0, 50)
-
-    console.log(`Search for "${query}" found ${filtered.length} results, returning ${limitedResults.length}`)
 
     return NextResponse.json(limitedResults)
 

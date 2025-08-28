@@ -1,3 +1,4 @@
+import { cleanSlug } from '@/utils/cleanSlug'
 import fs from 'fs'
 import matter from 'gray-matter'
 import path from 'path'
@@ -12,6 +13,7 @@ export interface DocFrontmatter {
 
 export interface DocMeta extends DocFrontmatter {
   slug: string
+  originalSlug: string
   path: string
 }
 
@@ -25,6 +27,21 @@ export interface NavigationSection {
   category: string
   mainSlug?: string
   items: NavigationItem[]
+}
+
+const CATEGORY_ORDER: Record<string, number> = {
+  'Introdução': 1,
+  'Estruturas de Dados': 2,
+  'Algoritmos': 3,
+  'Árvores': 4,
+  'Grafos': 5,
+  'Algoritmos Avançados': 6,
+  'Outros': 7,
+  'Geral': 8,
+}
+
+function getCategoryOrder(category: string): number {
+  return CATEGORY_ORDER[category] ?? 999
 }
 
 const docsDirectory = path.join(process.cwd(), 'src/docs')
@@ -61,9 +78,26 @@ export function getDocSlugs(): string[] {
   return getAllMdxFiles(docsDirectory, docsDirectory)
 }
 
+function findFileByCleanSlug(cleanedSlug: string): string | null {
+  const allSlugs = getDocSlugs()
+  return allSlugs.find(slug => cleanSlug(slug) === cleanedSlug) || null
+}
+
 export function getDocBySlug(slug: string): DocMeta | null {
   try {
-    const relativePath = `${slug}.mdx`
+    let originalSlug = slug
+
+    const slugExists = getDocSlugs().includes(slug)
+
+    if (!slugExists) {
+      const foundSlug = findFileByCleanSlug(slug)
+      if (!foundSlug) {
+        return null
+      }
+      originalSlug = foundSlug
+    }
+
+    const relativePath = `${originalSlug}.mdx`
     const fullPath = path.join(docsDirectory, relativePath)
     const normalizedPath = path.normalize(fullPath)
 
@@ -75,9 +109,10 @@ export function getDocBySlug(slug: string): DocMeta | null {
     const { data } = matter(fileContents)
 
     return {
-      slug,
+      slug: cleanSlug(originalSlug),
+      originalSlug,
       path: normalizedPath,
-      title: data.title || path.basename(slug),
+      title: data.title || path.basename(cleanSlug(originalSlug)),
       description: data.description || '',
       order: data.order || 999,
       category: data.category || 'Geral',
@@ -95,10 +130,11 @@ export function getAllDocs(): DocMeta[] {
     .map(slug => getDocBySlug(slug))
     .filter((doc): doc is DocMeta => doc !== null)
     .sort((a, b) => {
-      if (a.category !== b.category) {
-        if (a.category === 'Introdução') return -1
-        if (b.category === 'Introdução') return 1
-        return (a.category || '').localeCompare(b.category || '')
+      const categoryOrderA = getCategoryOrder(a.category || 'Geral')
+      const categoryOrderB = getCategoryOrder(b.category || 'Geral')
+
+      if (categoryOrderA !== categoryOrderB) {
+        return categoryOrderA - categoryOrderB
       }
 
       if (a.isMainCategory && !b.isMainCategory) return -1
@@ -139,10 +175,7 @@ export function getNavigation(): NavigationSection[] {
       items: section.items.sort((a, b) => a.order - b.order),
     }))
     .sort((a, b) => {
-      // Coloca "Introdução" primeiro
-      if (a.category === 'Introdução') return -1
-      if (b.category === 'Introdução') return 1
-      return a.category.localeCompare(b.category)
+      return getCategoryOrder(a.category) - getCategoryOrder(b.category)
     })
 }
 
@@ -187,9 +220,7 @@ export function getNavigationLinks(currentSlug: string): {
   }, {} as Record<string, typeof allDocs>)
 
   const sortedCategories = Object.keys(grouped).sort((a, b) => {
-    if (a === 'Introdução') return -1
-    if (b === 'Introdução') return 1
-    return a.localeCompare(b)
+    return getCategoryOrder(a) - getCategoryOrder(b)
   })
 
   const orderedDocs: typeof allDocs = []
@@ -213,13 +244,13 @@ export function getNavigationLinks(currentSlug: string): {
 
   const previous = currentIndex > 0 ? {
     title: orderedDocs[currentIndex - 1].title,
-    slug: orderedDocs[currentIndex - 1].slug,
+    slug: orderedDocs[currentIndex - 1].slug, // Já está limpo
     description: orderedDocs[currentIndex - 1].description
   } : null
 
   const next = currentIndex < orderedDocs.length - 1 ? {
     title: orderedDocs[currentIndex + 1].title,
-    slug: orderedDocs[currentIndex + 1].slug,
+    slug: orderedDocs[currentIndex + 1].slug, // Já está limpo
     description: orderedDocs[currentIndex + 1].description
   } : null
 
@@ -243,7 +274,15 @@ export function getCategoryPages(category: string, excludeMainCategory = true): 
     }))
 }
 
-export function getDocumentOrder(): Array<{ title: string, slug: string, category: string, isMain: boolean, order: number, index: number }> {
+export function getDocumentOrder(): Array<{
+  title: string
+  slug: string
+  originalSlug: string
+  category: string
+  isMain: boolean
+  order: number
+  index: number
+}> {
   const allDocs = getAllDocs()
 
   const grouped = allDocs.reduce((acc, doc) => {
@@ -256,9 +295,7 @@ export function getDocumentOrder(): Array<{ title: string, slug: string, categor
   }, {} as Record<string, typeof allDocs>)
 
   const sortedCategories = Object.keys(grouped).sort((a, b) => {
-    if (a === 'Introdução') return -1
-    if (b === 'Introdução') return 1
-    return a.localeCompare(b)
+    return getCategoryOrder(a) - getCategoryOrder(b)
   })
 
   const orderedDocs: typeof allDocs = []
@@ -277,6 +314,7 @@ export function getDocumentOrder(): Array<{ title: string, slug: string, categor
   return orderedDocs.map((doc, index) => ({
     title: doc.title,
     slug: doc.slug,
+    originalSlug: doc.originalSlug,
     category: doc.category || 'Geral',
     isMain: doc.isMainCategory || false,
     order: doc.order ?? 999,
