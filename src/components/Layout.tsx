@@ -20,9 +20,7 @@ export default function Layout({
 }: LayoutProps) {
   return (
     <div className="flex">
-      {/* Conteúdo principal */}
       <div className="flex-1 px-4 pt-6 pb-12 md:px-8 lg:px-12 2xl:px-16 min-w-0 overflow-x-hidden">
-        {/* Breadcrumb */}
         {breadcrumbs && (
           <Breadcrumb items={breadcrumbs} className="mb-6" />
         )}
@@ -33,7 +31,6 @@ export default function Layout({
         </div>
       </div>
 
-      {/* Table of Contents - Sidebar */}
       {tableOfContents && tableOfContents.length > 0 && (
         <aside className="hidden xl:block w-64 flex-shrink-0">
           <div className="sticky top-[65px] overflow-y-auto py-6 max-h-[calc(100vh-65px)]">
