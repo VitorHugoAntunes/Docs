@@ -5,12 +5,12 @@ export default function Footer() {
 
   return (
     <footer className="bg-white border-t border-gray-200">
-      <div className="px-4 sm:px-6 lg:px-8 py-12 max-w-[1440px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 max-w-[1440px] mx-auto">
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-6 lg:mb-8">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Documentação</h3>
-            <ul className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3 sm:mb-4">Documentação</h3>
+            <ul className="space-y-2 sm:space-y-3">
               <li>
                 <Link
                   href="/docs/introducao"
@@ -47,8 +47,8 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Guias</h3>
-            <ul className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3 sm:mb-4">Guias</h3>
+            <ul className="space-y-2 sm:space-y-3">
               <li>
                 <Link
                   href="/docs/conceitos-basicos"
@@ -85,8 +85,8 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Recursos</h3>
-            <ul className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3 sm:mb-4">Recursos</h3>
+            <ul className="space-y-2 sm:space-y-3">
               <li>
                 <a
                   href="https://github.com/seu-usuario/projeto"
@@ -129,8 +129,8 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Comunidade</h3>
-            <ul className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3 sm:mb-4">Comunidade</h3>
+            <ul className="space-y-2 sm:space-y-3">
               <li>
                 <a
                   href="https://discord.gg/exemplo"
@@ -169,18 +169,17 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-
         </div>
 
-        <div className="border-t border-gray-200 pt-8 mb-8">
-          <div className="max-w-md">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">
+        <div className="border-t border-gray-200 pt-6 sm:pt-8 mb-6 sm:mb-8">
+          <div className="max-w-full sm:max-w-md">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3 sm:mb-4">
               Mantenha-se atualizado
             </h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 mb-3 sm:mb-4">
               Receba as últimas atualizações da documentação e novos recursos.
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <input
                 type="email"
                 placeholder="Seu email"
@@ -188,7 +187,7 @@ export default function Footer() {
               />
               <button
                 type="button"
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
                 Inscrever
               </button>
@@ -196,56 +195,59 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-gray-200">
+        <div className="border-t border-gray-200 pt-6 sm:pt-8">
+          <div className="flex flex-col lg:flex-row justify-center items-center lg:justify-between space-y-4 lg:space-y-0">
 
-          <div className="flex items-center mb-4 sm:mb-0">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-              <span className="text-white font-bold text-sm">D</span>
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center gap-2 sm:gap-3">
+                <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600"></div>
+                <span className="text-lg sm:text-xl font-bold text-gray-900">DocSite</span>
+              </Link>
             </div>
-            <div>
-              <div className="text-sm font-semibold text-gray-900">
-                DocSite
-              </div>
-              <div className="text-xs text-gray-500">
-                Documentação moderna
-              </div>
-            </div>
-          </div>
 
-          <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6">
-            <div className="text-xs text-gray-500">
-              © {currentYear} DocSite. Todos os direitos reservados.
-            </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6">
               <Link
                 href="/privacidade"
-                className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
               >
                 Privacidade
               </Link>
               <Link
                 href="/termos"
-                className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
               >
                 Termos
               </Link>
               <Link
                 href="/cookies"
-                className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
               >
                 Cookies
               </Link>
             </div>
           </div>
 
-        </div>
+          <div className="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 mt-4 sm:mt-6 space-y-3 sm:space-y-0">
+            <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
+              © {currentYear} DocSite. Todos os direitos reservados.
+            </div>
 
-        <div className="flex items-center justify-center mt-8 pt-6 border-t border-gray-100">
-          <div className="flex items-center space-x-2 text-xs text-gray-500">
-            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-            <span>Todos os sistemas operacionais</span>
-            <span className="mx-2">•</span>
-            <span>Última atualização: hoje</span>
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
+              <span className="hidden sm:inline">Última atualização: hoje</span>
+              <span className="hidden sm:inline">•</span>
+              <div className="text-center sm:text-left">
+                Desenvolvido por{' '}
+                <a
+                  href="https://www.linkedin.com/in/vitor-hugo-antunes-passos/"
+                  className="text-blue-600 hover:text-blue-700 hover:underline transition-colors font-medium"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Vitor Hugo Antunes
+                </a>
+                {' '}com ❤️
+              </div>
+            </div>
           </div>
         </div>
 
