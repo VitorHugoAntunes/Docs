@@ -12,11 +12,14 @@ import {
   getNavigationLinks,
   getTableOfContents,
 } from '@/lib/docs'
+import { generateBreadcrumbs } from '@/utils/breadcrumb'
 import fs from 'fs'
 import matter from 'gray-matter'
 import { Metadata } from 'next'
-import { compileMDX } from 'next-mdx-remote/rsc'
+import { MDXRemote } from 'next-mdx-remote/rsc'
 import { notFound } from 'next/navigation'
+import rehypePrettyCode from 'rehype-pretty-code'
+import remarkGfm from 'remark-gfm'
 
 type DocPageProps = {
   params: Promise<{ slug: string[] }>
@@ -52,42 +55,45 @@ export default async function DocPage({ params }: DocPageProps) {
   const slug = resolvedParams.slug.join('/')
   const doc = getDocBySlug(slug)
 
-  if (!doc) notFound()
+  if (!doc) return notFound()
 
   const filePath = doc.path
-
   if (!fs.existsSync(filePath)) {
     console.error(`File not found: ${filePath}`)
-    notFound()
+    return notFound()
   }
 
   const fileContent = fs.readFileSync(filePath, 'utf8')
   const { content: rawContent } = matter(fileContent)
 
-  const { content } = await compileMDX({
-    source: rawContent,
-    components: mdxComponents,
-    options: {
-      parseFrontmatter: false,
-      mdxOptions: { remarkPlugins: [], rehypePlugins: [] },
-    },
-  })
-
   const navigation = getNavigation()
   const tableOfContents = getTableOfContents(rawContent)
-  const navigationLinks = getNavigationLinks(slug)
-
+  const navigationLinks = getNavigationLinks(doc.slug)
   const categoryPages = doc.isMainCategory
     ? getCategoryPages(doc.category || 'Geral', true)
     : []
+  const breadcrumbs = generateBreadcrumbs(navigation, doc.slug)
 
   return (
     <Layout
-      navigation={navigation}
       tableOfContents={tableOfContents}
-      currentSlug={slug}
+      breadcrumbs={breadcrumbs}
     >
-      <article className="prose prose-lg max-w-none">{content}</article>
+      <article className="prose prose-lg max-w-none">
+        <MDXRemote
+          source={rawContent}
+          components={mdxComponents}
+          options={{
+            parseFrontmatter: false,
+            mdxOptions: {
+              remarkPlugins: [remarkGfm],
+              rehypePlugins: [
+                [rehypePrettyCode, { theme: 'one-light' }],
+              ],
+            },
+          }}
+        />
+      </article>
 
       {doc.isMainCategory && categoryPages.length > 0 && (
         <CategoryPages
@@ -100,8 +106,9 @@ export default async function DocPage({ params }: DocPageProps) {
         previous={navigationLinks.previous}
         next={navigationLinks.next}
       />
-      <PageFeedback slug={slug} className="mt-12" />
-      <EditOnGitHub slug={slug} className="mt-12" />
+
+      <PageFeedback slug={doc.originalSlug} className="mt-12" />
+      <EditOnGitHub slug={doc.originalSlug} className="mt-12" />
     </Layout>
   )
 }
