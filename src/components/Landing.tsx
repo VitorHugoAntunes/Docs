@@ -40,16 +40,15 @@ const LandingPage = () => {
       <div className="absolute top-1/4 left-1/6 w-48 h-48 sm:w-72 sm:h-72 sm:left-1/4 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
       <div className="absolute bottom-1/4 right-1/6 w-64 h-64 sm:w-96 sm:h-96 sm:right-1/4 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
-      <section className="relative flex flex-col justify-center items-center h-full px-4 sm:px-6 lg:px-8">
+      <main className="relative flex flex-col justify-center items-center h-full px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-4xl mx-auto w-full">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-3 py-2 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium mb-6 sm:mb-8 border border-white/20">
             <Star className="h-3 w-3 sm:h-4 sm:w-4" />
             <span>Simples e Eficiente</span>
           </div>
 
-
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight px-2">
-            Documentação de {' '}
+          <h1 className="main-heading text-white mb-4 sm:mb-6 leading-tight px-2 font-bold">
+            Documentação de <br />
             <span className="bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent block sm:inline mt-2 sm:mt-0">
               Estrutura de Dados
             </span>
@@ -93,7 +92,7 @@ const LandingPage = () => {
                   <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full mx-auto mb-2 sm:mb-4 flex items-center justify-center float-animation glow-pulse bg-white">
                     <Image src={ReactSVG} alt="React Logo" className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12" />
                   </div>
-                  <p className="text-sm sm:text-base md:text-lg font-medium mb-1 sm:mb-2">Documentação de Estruturas de Dados</p>
+                  <h2 className="text-sm sm:text-base md:text-lg font-medium mb-1 sm:mb-2">Documentação de Estruturas de Dados</h2>
                   <p className="text-xs sm:text-sm text-white/50">Organizada e sempre acessível</p>
                 </div>
               </div>
@@ -102,7 +101,7 @@ const LandingPage = () => {
             <div className="absolute -inset-2 sm:-inset-4 bg-gradient-to-r from-cyan-400/20 to-purple-400/20 rounded-2xl sm:rounded-3xl blur-xl -z-10"></div>
           </div>
         </div>
-      </section>
+      </main>
     </div>
   );
 };
