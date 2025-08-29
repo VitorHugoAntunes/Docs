@@ -1,4 +1,4 @@
-import { getDocBySlug, NavigationSection } from '@/lib/docs'
+import { getDocBySlug, NavigationSection } from '@/utils/docs'
 
 interface BreadcrumbItem {
   title: string

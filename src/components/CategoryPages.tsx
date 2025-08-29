@@ -1,4 +1,4 @@
-import { NavigationLink } from '@/lib/docs'
+import { NavigationLink } from '@/utils/docs'
 import { ArrowRight, FileText } from 'lucide-react'
 import Link from 'next/link'
 

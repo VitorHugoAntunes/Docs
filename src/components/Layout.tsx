@@ -1,6 +1,6 @@
 import Breadcrumb from '@/components/Breadcrumb'
-import { getNavigation } from '@/lib/docs'
 import { BreadcrumbItem } from '@/utils/breadcrumb'
+import { getNavigation } from '@/utils/docs'
 import { ReactNode } from 'react'
 import ConditionalDocsLayout from './ConditionalDocsLayout'
 import ImprovedTableOfContents from './TableOfContents'

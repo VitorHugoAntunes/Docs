@@ -1,5 +1,5 @@
 import { TableOfContentsItem } from '../types';
-import { normalizeText } from './slugify';
+import { normalizeSlug } from './normalize';
 
 export function extractTableOfContents(markdownContent: string): TableOfContentsItem[] {
 
@@ -10,9 +10,9 @@ export function extractTableOfContents(markdownContent: string): TableOfContents
   while ((match = headingRegex.exec(markdownContent)) !== null) {
     const level = match[1].length;
     const title = match[2].trim();
-    const slug = normalizeText(title);
+    const slug = normalizeSlug(title);
 
-    const id = normalizeText(title);
+    const id = normalizeSlug(title);
     headings.push({
       id,
       title,
@@ -33,7 +33,7 @@ export function extractTableOfContentsFromHTML(htmlContent: string): TableOfCont
     const level = parseInt(match[1]);
     const id = match[2];
     const title = match[3].trim();
-    const slug = normalizeText(title);
+    const slug = normalizeSlug(title);
 
     headings.push({
       id,

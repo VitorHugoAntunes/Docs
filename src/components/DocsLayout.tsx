@@ -1,6 +1,6 @@
 'use client'
 
-import { NavigationSection } from '@/lib/docs'
+import { NavigationSection } from '@/utils/docs'
 import { ReactNode } from 'react'
 import Sidebar from './Sidebar'
 import MobileSidebar from './SidebarMobile'

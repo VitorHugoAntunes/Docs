@@ -1,7 +1,7 @@
 'use client'
 
 import { useSidebar } from '@/contexts/SidebarContext'
-import { NavigationSection } from '@/lib/docs'
+import { NavigationSection } from '@/utils/docs'
 import { ChevronRight, X } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
@@ -109,7 +109,7 @@ export default function MobileSidebar({ navigation, currentSlug }: MobileSidebar
                       <Link
                         href={`/docs/${section.mainSlug}`}
                         onClick={close}
-                        className={`flex items-center space-x-2 text-sm font-semibold uppercase tracking-wide transition-colors ${currentSlug === section.mainSlug
+                        className={`flex items-center space-x-2 text font-semibold tracking-wide transition-colors ${currentSlug === section.mainSlug
                           ? 'text-blue-600 hover:opacity-80'
                           : 'text-gray-500 hover:text-blue-600'
                           }`}

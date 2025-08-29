@@ -1,4 +1,4 @@
-import { getAllDocs } from '@/lib/docs'
+import { getAllDocs } from '@/utils/docs'
 import fs from 'fs'
 import matter from 'gray-matter'
 import { NextRequest, NextResponse } from 'next/server'

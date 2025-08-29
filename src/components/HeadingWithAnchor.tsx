@@ -1,6 +1,6 @@
 "use client"
 
-import { normalizeText } from "@/utils/slugify"
+import { normalizeSlug } from "@/utils/normalize"
 import { LinkIcon } from "lucide-react"
 import { HTMLAttributes } from "react"
 
@@ -12,7 +12,7 @@ export const HeadingWithAnchor = ({
   children,
   ...props
 }: HeadingProps & { as: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' }) => {
-  const id = normalizeText(String(children))
+  const id = normalizeSlug(String(children))
 
   const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()

@@ -92,6 +92,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           } else if (isBelow) {
             container.scrollTo({
               top: elementOffsetTop - containerHeight + 40,
+              behavior: 'smooth',
             });
           }
         }
@@ -203,7 +204,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           behavior: 'smooth',
         });
       }
-    }, 350);
+    }, 500);
   };
 
   if (!isOpen) return null;

@@ -4,6 +4,7 @@ import Layout from '@/components/Layout'
 import { mdxComponents } from '@/components/MDX'
 import NavigationLinks from '@/components/NavigationLinks'
 import PageFeedback from '@/components/PageFeedback'
+import { generateBreadcrumbs } from '@/utils/breadcrumb'
 import {
   getCategoryPages,
   getDocBySlug,
@@ -11,8 +12,7 @@ import {
   getNavigation,
   getNavigationLinks,
   getTableOfContents,
-} from '@/lib/docs'
-import { generateBreadcrumbs } from '@/utils/breadcrumb'
+} from '@/utils/docs'
 import fs from 'fs'
 import matter from 'gray-matter'
 import { Metadata } from 'next'

@@ -49,3 +49,51 @@ export interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+export interface DocFrontmatter {
+  title: string
+  description?: string
+  order?: number
+  category?: string
+  isMainCategory?: boolean
+}
+
+export interface DocMeta extends DocFrontmatter {
+  slug: string
+  originalSlug: string
+  path: string
+}
+
+export interface NavigationItem {
+  title: string
+  slug: string
+  order: number
+}
+
+export interface NavigationSection {
+  category: string
+  mainSlug?: string
+  items: NavigationItem[]
+}
+
+export interface NavigationLink {
+  title: string
+  slug: string
+  description?: string
+}
+
+export interface DocumentOrderItem {
+  title: string
+  slug: string
+  originalSlug: string
+  category: string
+  isMain: boolean
+  order: number
+  index: number
+}
+
+export interface TableOfContentsItem {
+  id: string
+  title: string
+  level: number
+}

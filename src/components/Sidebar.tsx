@@ -1,6 +1,6 @@
 'use client'
 
-import { NavigationSection } from '@/lib/docs'
+import { NavigationSection } from '@/utils/docs'
 import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
@@ -27,7 +27,7 @@ export default function Sidebar({ navigation, currentSlug }: SidebarProps) {
               {section.mainSlug ? (
                 <Link
                   href={`/docs/${section.mainSlug}`}
-                  className={`flex items-center space-x-2 text-sm font-semibold uppercase tracking-wide transition-colors ${currentSlug === section.mainSlug
+                  className={`flex items-center space-x-2 text font-semibold tracking-wide transition-colors ${currentSlug === section.mainSlug
                     ? 'text-blue-600 hover:opacity-80'
                     : 'text-gray-500 hover:text-blue-600'
                     }`}

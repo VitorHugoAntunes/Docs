@@ -1,6 +1,6 @@
 'use client'
 
-import { NavigationSection } from '@/lib/docs'
+import { NavigationSection } from '@/utils/docs'
 import { usePathname } from 'next/navigation'
 import { ReactNode } from 'react'
 import DocsLayout from './DocsLayout'
