@@ -63,7 +63,7 @@ function ImageZoomModal({
     >
       <button
         onClick={onClose}
-        className="fixed top-4 right-4 z-[10000] p-2 sm:p-3 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50 group"
+        className="fixed top-4 right-4 z-[10000] p-2 sm:p-3 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50 group cursor-pointer"
         aria-label="Fechar imagem ampliada"
         autoFocus
       >
