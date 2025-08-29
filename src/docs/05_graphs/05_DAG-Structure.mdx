@@ -661,6 +661,7 @@ int main() {
     
     return 0;
 }
+```
 
 ## Algoritmos Importantes em DAGs
 
@@ -677,10 +678,10 @@ Em DAGs, podemos encontrar caminhos mais longos e mais curtos em tempo linear us
 ```c
 // Pseudocódigo para caminho mais longo
 void caminhoMaisLongo(DAG* dag, int origem) {
-    1. Inicializar dist[origem] = 0, outros = -∞
-    2. Obter ordenação topológica
-    3. Para cada vértice u na ordem topológica:
-          Para cada adjacente v de u:
+    // 1. Inicializar dist[origem] = 0, outros = -∞
+    // 2. Obter ordenação topológica
+    // 3. Para cada vértice u na ordem topológica:
+          // Para cada adjacente v de u:
               dist[v] = max(dist[v], dist[u] + peso(u,v))
 }
 ```
