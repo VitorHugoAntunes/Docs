@@ -4,7 +4,7 @@ import { useSidebar } from '@/contexts/SidebarContext'
 import { NavigationSection } from '@/utils/docs'
 import { ChevronRight, X } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 interface MobileSidebarProps {
   navigation: NavigationSection[]
@@ -13,27 +13,11 @@ interface MobileSidebarProps {
 
 export default function MobileSidebar({ navigation, currentSlug }: MobileSidebarProps) {
   const { isOpen, close } = useSidebar()
-  const [isVisible, setIsVisible] = useState(false)
-  const [isAnimating, setIsAnimating] = useState(false)
 
   const isSectionActive = (section: NavigationSection) => {
     return section.mainSlug === currentSlug ||
       section.items.some(item => item.slug === currentSlug)
   }
-
-  useEffect(() => {
-    if (isOpen) {
-      setIsVisible(true)
-      setIsAnimating(true)
-      setTimeout(() => setIsAnimating(false), 50)
-    } else {
-      setIsAnimating(true)
-      setTimeout(() => {
-        setIsVisible(false)
-        setIsAnimating(false)
-      }, 350)
-    }
-  }, [isOpen])
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -45,6 +29,8 @@ export default function MobileSidebar({ navigation, currentSlug }: MobileSidebar
     if (isOpen) {
       document.addEventListener('keydown', handleEscape)
       document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
     }
 
     return () => {
@@ -53,39 +39,17 @@ export default function MobileSidebar({ navigation, currentSlug }: MobileSidebar
     }
   }, [isOpen, close])
 
-  if (!isVisible) return null
+  if (!isOpen) return null
 
   return (
     <>
       <div
-        className={`
-          fixed inset-0 bg-black/50 z-40 md:hidden
-          transition-all duration-300 ease-in-out
-          ${isOpen
-            ? 'bg-opacity-50 backdrop-blur-sm'
-            : 'bg-opacity-0'
-          }
-        `}
+        className="fixed inset-0 bg-black/50 z-40 md:hidden"
         onClick={close}
       />
 
-      <aside className={`
-        fixed left-0 top-0 h-full w-80 bg-white z-50 md:hidden flex flex-col
-        transform transition-all duration-350 ease-out
-        ${isOpen && !isAnimating
-          ? 'translate-x-0 shadow-2xl'
-          : '-translate-x-full shadow-lg'
-        }
-        border-r border-gray-200
-      `}>
-        <div className={`
-          flex items-center justify-between px-6 h-16 border-b border-gray-200 flex-shrink-0
-          transform transition-all duration-400 ease-out delay-100
-          ${isOpen && !isAnimating
-            ? 'translate-x-0 opacity-100'
-            : '-translate-x-4 opacity-0'
-          }
-        `}>
+      <aside className="fixed left-0 top-0 h-full w-80 bg-white z-50 md:hidden flex flex-col border-r border-gray-200 shadow-xl">
+        <div className="flex items-center justify-between px-6 h-16 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
           <button
             onClick={close}
@@ -96,8 +60,8 @@ export default function MobileSidebar({ navigation, currentSlug }: MobileSidebar
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain">
-          <div className="py-6 px-6 min-h-full">
+        <div className="flex-1 overflow-y-auto">
+          <div className="py-6 px-6">
             <nav className="space-y-4">
               {navigation.map((section) => {
                 const isActive = isSectionActive(section)
@@ -110,8 +74,8 @@ export default function MobileSidebar({ navigation, currentSlug }: MobileSidebar
                         href={`/docs/${section.mainSlug}`}
                         onClick={close}
                         className={`flex items-center space-x-2 text font-semibold tracking-wide transition-colors ${currentSlug === section.mainSlug
-                          ? 'text-blue-600 hover:opacity-80'
-                          : 'text-gray-500 hover:text-blue-600'
+                            ? 'text-blue-600 hover:opacity-80'
+                            : 'text-gray-500 hover:text-blue-600'
                           }`}
                       >
                         <span>{section.category}</span>
@@ -131,9 +95,9 @@ export default function MobileSidebar({ navigation, currentSlug }: MobileSidebar
                             <Link
                               href={`/docs/${item.slug}`}
                               onClick={close}
-                              className={`block text-sm py-1.5 px-2 rounded-md transition-all duration-150 ${currentSlug === item.slug
-                                ? 'text-blue-700 bg-blue-50 font-medium'
-                                : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                              className={`block text-sm py-1.5 px-2 rounded-md transition-colors ${currentSlug === item.slug
+                                  ? 'text-blue-700 bg-blue-50 font-medium'
+                                  : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
                                 }`}
                             >
                               {item.title}
@@ -148,8 +112,6 @@ export default function MobileSidebar({ navigation, currentSlug }: MobileSidebar
             </nav>
           </div>
         </div>
-
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white/80 to-transparent"></div>
       </aside>
     </>
   )
