@@ -59,7 +59,7 @@ const LandingPage = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-12 sm:mb-16 px-4 sm:px-0">
-            <Link href={"/docs/get-started/introducao"}>
+            <Link href={"/docs/get-started"}>
               <button className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white text-gray-900 rounded-xl font-semibold hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl hover:shadow-white/10 flex items-center justify-center gap-2 hover:scale-105 cursor-pointer text-sm sm:text-base">
                 Começar Agora
                 <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
