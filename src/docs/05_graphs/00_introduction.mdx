@@ -1,0 +1,119 @@
+---
+title: Começando com Grafos
+category: Grafos
+order: 0
+description: Guia completo para aprender teoria dos grafos e seus algoritmos fundamentais em C
+isMainCategory: true
+---
+
+# Começando com Grafos
+
+Este capítulo apresenta a **teoria dos grafos**, uma das áreas mais poderosas e aplicadas da ciência da computação, com implementações práticas em **C**.
+
+## O que são grafos?
+
+Grafos são estruturas matemáticas compostas por **vértices** (ou nós) conectados por **arestas**. Diferentemente das árvores, grafos podem ter ciclos, múltiplas conexões e não possuem hierarquia fixa, representando relações complexas entre elementos.
+
+**Componentes fundamentais**:
+- **Vértices (V)**: Elementos ou entidades do grafo
+- **Arestas (E)**: Conexões entre vértices
+- **Peso**: Valor associado a uma aresta (em grafos ponderados)
+- **Grau**: Número de arestas conectadas a um vértice
+
+## Tipos de grafos
+
+- **Direcionados vs Não-direcionados**: Arestas com ou sem direção específica
+- **Ponderados vs Não-ponderados**: Arestas com ou sem pesos associados
+- **Conectados vs Desconectados**: Todos os vértices alcançáveis ou não
+- **Acíclicos**: Grafos sem ciclos (como DAGs)
+
+## Por que estudar grafos?
+
+Grafos modelam problemas reais em diversas áreas:
+
+- **Redes sociais**: Conexões entre pessoas (Facebook, LinkedIn)
+- **Sistemas de transporte**: Rotas, mapas e navegação GPS
+- **Redes de computadores**: Internet, protocolos de roteamento
+- **Algoritmos de otimização**: Problemas de logística e distribuição
+- **Inteligência artificial**: Busca em espaços de estados
+- **Bioinformática**: Análise de redes de proteínas e genes
+- **Sistemas de recomendação**: Análise de preferências e comportamentos
+
+## O que você vai aprender
+
+Este guia explora grafos e algoritmos fundamentais organizados progressivamente:
+
+**Grafos Básicos**: Conceitos fundamentais, representações (matriz e lista de adjacência) e algoritmos de busca (DFS, BFS).
+
+**Grafos Ponderados**: Extensão para arestas com pesos, representações otimizadas e operações básicas.
+
+**Algoritmos de Caminho Mínimo**: Dijkstra para grafos com pesos não-negativos e Bellman-Ford para detecção de ciclos negativos.
+
+**Árvores de Abrangência Mínima**: Algoritmos de Prim e Kruskal para encontrar subgrafos conectados de custo mínimo.
+
+**Grafos Direcionados Acíclicos (DAG)**: Propriedades especiais, ordenação topológica e aplicações em scheduling.
+
+**Union-Find**: Estrutura auxiliar para problemas de conectividade e otimização de algoritmos em grafos.
+
+## Pré-requisitos
+
+**Conhecimentos necessários**:
+- Estruturas de dados (arrays, listas, filas, pilhas)
+- Ponteiros e alocação dinâmica em C
+- Algoritmos de busca e recursividade
+- Conceitos básicos de árvores
+- Análise de complexidade computacional
+
+**Conceitos matemáticos úteis**:
+- Noções de matemática discreta
+- Conceitos básicos de teoria dos conjuntos
+- Compreensão de relações e funções
+
+## Algoritmos essenciais
+
+Durante o estudo, você verá sobre algoritmos clássicos:
+
+- **Busca em profundidade (DFS)**: Exploração recursiva
+- **Busca em largura (BFS)**: Exploração por níveis
+- **Dijkstra**: Caminho mínimo com pesos não-negativos
+- **Bellman-Ford**: Detecção de ciclos negativos
+- **Prim e Kruskal**: Árvores de abrangência mínima
+- **Ordenação topológica**: Sequenciamento em DAGs
+
+## Dicas para o aprendizado
+
+- **Trace algoritmos** passo a passo em exemplos pequenos
+- **Teste casos extremos**: grafos vazios, desconectados, com ciclos
+- **Compare representações** para entender trade-offs
+- **Pratique problemas** de plataformas como LeetCode e HackerRank
+- **Implemente visualizadores** simples para debug
+
+## Aplicações em sistemas reais
+
+Os conceitos que você aprenderá são fundamentais em:
+
+- **GPS e navegação** (algoritmos de caminho mínimo)
+- **Redes de telecomunicações** (otimização de infraestrutura)
+- **Compiladores** (análise de dependências)
+- **Jogos** (pathfinding e IA)
+- **Análise de redes sociais** (detecção de comunidades)
+- **Bioinformática** (análise de sequências genéticas)
+
+## Complexidade computacional
+
+Grafos introduzem desafios únicos de eficiência:
+
+- **Problemas P**: Busca, caminho mínimo, MST
+- **Problemas NP**: Caixeiro viajante, coloração de grafos
+- **Heurísticas e aproximações** para problemas intratáveis
+
+## Próximos passos
+
+1. Comece com **Grafos básicos** para dominar representações e busca
+2. Evolua para **Grafos ponderados** aplicando conceitos de peso
+3. Explore **Algoritmos de caminho mínimo** para problemas de otimização
+4. Estude **Árvores de abrangência mínima** para conectividade otimizada
+5. Compreenda **DAGs** para problemas de sequenciamento
+6. Finalize com **Union-Find** para otimização avançada
+
+Grafos são onipresentes na computação moderna. Dominar seus conceitos e algoritmos é essencial para resolver problemas complexos de forma elegante e eficiente. Prepare-se para uma jornada fascinante pelo mundo das conexões!
