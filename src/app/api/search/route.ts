@@ -127,11 +127,11 @@ export async function GET(request: NextRequest) {
         const fileContent = fs.readFileSync(normalizedPath, 'utf8')
         const { content: rawContent } = matter(fileContent)
 
-        const baseHref = `/docs/${doc.originalSlug}`
+        const baseHref = `/docs/${doc.slug}`
         const cleanContent = cleanMarkdownContent(rawContent)
 
         allResults.push({
-          id: doc.originalSlug,
+          id: doc.slug,
           title: doc.title,
           content: cleanContent,
           category: doc.category || 'Geral',
