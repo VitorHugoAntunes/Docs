@@ -164,16 +164,19 @@ No* remover(No* raiz, int chave) {
         raiz->direita = remover(raiz->direita, chave);
     else {
         // Este é o nó a ser removido
-        if ((raiz->esquerda == NULL) || (raiz->direita == NULL)) {
-            No* temp = raiz->esquerda ? raiz->esquerda : raiz->direita;
-
-            if (temp == NULL) {
-                temp = raiz;
-                raiz = NULL;
-            } else
-                *raiz = *temp; // Copia o conteúdo do filho não vazio
-            free(temp);
-        } else {
+        if (raiz->esquerda == NULL) {
+            // Nó sem filho esquerdo ou folha
+            No* temp = raiz->direita;
+            free(raiz);
+            return temp;
+        }
+        else if (raiz->direita == NULL) {
+            // Nó sem filho direito
+            No* temp = raiz->esquerda;
+            free(raiz);
+            return temp;
+        }
+        else {
             // Nó com dois filhos: obter o sucessor inorder
             No* temp = encontrarMinimo(raiz->direita);
 
@@ -247,6 +250,30 @@ void imprimirDetalhesNo(No* no) {
                no->chave, no->altura, obterFatorBalanceamento(no));
     }
 }
+
+// Função para liberar toda a árvore
+void liberarArvore(No* raiz) {
+    if (raiz != NULL) {
+        liberarArvore(raiz->esquerda);
+        liberarArvore(raiz->direita);
+        free(raiz);
+    }
+}
+
+// Função para imprimir a árvore de forma visual (pré-ordem com indentação)
+void imprimirArvoreVisual(No* raiz, int nivel) {
+    if (raiz != NULL) {
+        for (int i = 0; i < nivel; i++) {
+            printf("  ");
+        }
+        printf("%d (h:%d, fb:%d)\n", raiz->chave, raiz->altura, obterFatorBalanceamento(raiz));
+        
+        if (raiz->esquerda != NULL || raiz->direita != NULL) {
+            imprimirArvoreVisual(raiz->esquerda, nivel + 1);
+            imprimirArvoreVisual(raiz->direita, nivel + 1);
+        }
+    }
+}
 ```
 
 Agora, vamos criar uma função main para demonstrar o funcionamento da árvore AVL:
@@ -271,6 +298,11 @@ int main() {
     imprimirEmOrdem(raiz);
     printf("\n\n");
 
+    // Visualização da estrutura da árvore
+    printf("Estrutura da árvore (h=altura, fb=fator de balanceamento):\n");
+    imprimirArvoreVisual(raiz, 0);
+    printf("\n");
+
     // Mostrando detalhes da raiz
     printf("Detalhes da raiz:\n");
     imprimirDetalhesNo(raiz);
@@ -291,8 +323,27 @@ int main() {
     imprimirEmOrdem(raiz);
     printf("\n\n");
 
+    printf("Estrutura da árvore após remoção:\n");
+    imprimirArvoreVisual(raiz, 0);
+    printf("\n");
+
     printf("Detalhes da nova raiz:\n");
     imprimirDetalhesNo(raiz);
+    
+    // Teste adicional: removendo mais elementos
+    printf("\n=== Teste adicional de remoção ===\n");
+    printf("Removendo elemento 30:\n");
+    raiz = remover(raiz, 30);
+    printf("Árvore após remoção do 30: ");
+    imprimirEmOrdem(raiz);
+    printf("\n");
+    
+    printf("Estrutura final:\n");
+    imprimirArvoreVisual(raiz, 0);
+    
+    // Liberar memória
+    liberarArvore(raiz);
+    printf("\nMemória liberada com sucesso!\n");
 
     return 0;
 }
@@ -320,15 +371,22 @@ Usada quando o fator de balanceamento < -1 e a inserção foi feita na subárvor
 
 1. **Sistemas de banco de dados:**
    - Árvores AVL são utilizadas em índices de banco de dados onde é necessário garantir tempos de busca consistentes e rápidos.
-
 2. **Compiladores e interpretadores:**
    - Utilizadas em tabelas de símbolos para manter identificadores ordenados com acesso eficiente.
-
 3. **Sistemas de arquivos:**
    - Alguns sistemas de arquivos utilizam árvores AVL para organizar metadados e diretórios de forma eficiente.
-
 4. **Aplicações de tempo real:**
    - Quando é necessário garantir tempo de resposta previsível, as árvores AVL oferecem operações O(log n) no pior caso.
-
 5. **Bibliotecas de containers:**
    - Muitas implementações de sets e maps em bibliotecas padrão utilizam árvores AVL ou estruturas similares.
+
+## Complexidade das Operações
+
+| Operação | Complexidade Temporal | Complexidade Espacial |
+|----------|----------------------|----------------------|
+| Busca    | O(log n)             | O(log n) recursiva   |
+| Inserção | O(log n)             | O(log n) recursiva   |
+| Remoção  | O(log n)             | O(log n) recursiva   |
+| Traversal| O(n)                 | O(log n) recursiva   |
+
+As árvores AVL garantem que a altura da árvore seja sempre O(log n), assegurando que todas as operações fundamentais sejam eficientes mesmo no pior caso.
