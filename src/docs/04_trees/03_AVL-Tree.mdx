@@ -168,12 +168,14 @@ No* remover(No* raiz, int chave) {
             // Nó sem filho esquerdo ou folha
             No* temp = raiz->direita;
             free(raiz);
+            raiz = NULL;
             return temp;
         }
         else if (raiz->direita == NULL) {
             // Nó sem filho direito
             No* temp = raiz->esquerda;
             free(raiz);
+            raiz = NULL;
             return temp;
         }
         else {
@@ -347,6 +349,39 @@ int main() {
 
     return 0;
 }
+```
+
+Exemplo de saída esperada da estrutura da árvore após inserções:
+
+```
+=== Demonstração da Árvore AVL ===
+            50(h:1, fb:0)
+
+      40(h:2, fb:-1)
+
+30(h:3, fb:0)
+
+            25(h:1, fb:0)
+
+      20(h:2, fb:0)
+
+            10(h:1, fb:0)
+```
+
+Agora o exemplo de saída após remoção do nó 10:
+
+```
+===Árvore AVL em ordem após remoção: 20 25 30 40 50===
+
+            50(h:1, fb:0)
+
+      40(h:2, fb:-1)
+
+30(h:3, fb:0)
+
+            25(h:1, fb:0)
+
+      20(h:2, fb:-1)
 ```
 
 ## Tipos de Rotações
