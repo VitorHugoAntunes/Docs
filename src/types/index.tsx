@@ -52,7 +52,7 @@ export interface SearchModalProps {
 
 export interface DocFrontmatter {
   title: string
-  description?: string
+  description: string
   order?: number
   category?: string
   isMainCategory?: boolean
