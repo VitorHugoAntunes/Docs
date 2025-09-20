@@ -1,6 +1,7 @@
 import { ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { AnchorHTMLAttributes, HTMLAttributes, TableHTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react'
+import { DangerAlert, InfoAlert, SuccessAlert, WarningAlert } from './Alert'
 import CustomCodeBlock from './Codeblock'
 import { HeadingWithAnchor } from './HeadingWithAnchor'
 import ZoomableImage from './ZoomableImage'
@@ -18,9 +19,6 @@ type AnchorProps = AnchorHTMLAttributes<HTMLAnchorElement>
 type TableProps = TableHTMLAttributes<HTMLTableElement>
 type ThProps = ThHTMLAttributes<HTMLTableHeaderCellElement>
 type TdProps = TdHTMLAttributes<HTMLTableDataCellElement>
-interface CodeBlockProps extends CodeProps {
-  className?: string
-}
 
 const isExternalLink = (href: string): boolean => {
   if (!href) return false
@@ -196,4 +194,8 @@ export const mdxComponents = {
       />
     );
   },
+  Info: InfoAlert,
+  Warning: WarningAlert,
+  Success: SuccessAlert,
+  Danger: DangerAlert,
 }
