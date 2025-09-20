@@ -1,12 +1,12 @@
-import { getDocBySlug, getDocSlugs } from '@/utils/docs'
+import { getAllDocs, getDocBySlug } from '@/utils/docs'
 import fs from 'fs'
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://localhost:3000'
-  const slugs = getDocSlugs()
+  const docs = getAllDocs().map(doc => doc.slug)
 
-  const docUrls = slugs.map((slug) => {
+  const docUrls = docs.map((slug) => {
     const doc = getDocBySlug(slug)
     let lastModified = new Date()
 
