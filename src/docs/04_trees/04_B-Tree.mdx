@@ -43,9 +43,35 @@ typedef struct NoB {
     bool ehFolha;                     // Verdadeiro se o nó é folha
 } NoB;
 
+// Declarações das funções (forward declarations)
+NoB* criarNo(bool ehFolha);
+void percorrer(NoB* no);
+NoB* buscar(NoB* no, int chave);
+void dividirFilho(NoB* pai, int indice);
+void inserirNaoCheio(NoB* no, int chave);
+NoB* inserir(NoB* raiz, int chave);
+int obterPredecessor(NoB* no, int indice);
+int obterSucessor(NoB* no, int indice);
+void pegarEmprestadoAnterior(NoB* no, int indice);
+void pegarEmprestadoProximo(NoB* no, int indice);
+void mesclar(NoB* no, int indice);
+void preencherFilho(NoB* no, int indice);
+void removerDaFolha(NoB* no, int indice);
+void removerDeNaoFolha(NoB* no, int indice);
+void removerAux(NoB* no, int chave);
+NoB* remover(NoB* raiz, int chave);
+void imprimirEstrutura(NoB* no, int nivel);
+int contarNos(NoB* no);
+void liberarArvore(NoB* raiz);
+
 // Função para criar um novo nó
 NoB* criarNo(bool ehFolha) {
     NoB* novoNo = (NoB*)malloc(sizeof(NoB));
+    if (novoNo == NULL) {
+        printf("Erro: Falha na alocação de memória\n");
+        exit(1);
+    }
+    
     novoNo->ehFolha = ehFolha;
     novoNo->numChaves = 0;
     
@@ -57,7 +83,7 @@ NoB* criarNo(bool ehFolha) {
     return novoNo;
 }
 
-// Função para percorrer a árvore B
+// Função para percorrer a árvore B em ordem
 void percorrer(NoB* no) {
     if (no != NULL) {
         int i;
@@ -79,6 +105,9 @@ void percorrer(NoB* no) {
 
 // Função para buscar uma chave na árvore B
 NoB* buscar(NoB* no, int chave) {
+    // Verificação de segurança
+    if (no == NULL) return NULL;
+    
     int i = 0;
     
     // Encontrar a primeira chave maior ou igual à chave buscada
@@ -171,6 +200,15 @@ void inserirNaoCheio(NoB* no, int chave) {
 
 // Função principal para inserir uma nova chave na árvore B
 NoB* inserir(NoB* raiz, int chave) {
+
+    // Se a árvore está vazia
+    if (raiz == NULL) {
+        raiz = criarNo(true);
+        raiz->chaves[0] = chave;
+        raiz->numChaves = 1;
+        return raiz;
+    }
+    
     // Se a raiz está cheia, a árvore cresce em altura
     if (raiz->numChaves == MAXIMO_CHAVES) {
         NoB* novaRaiz = criarNo(false);
@@ -310,35 +348,6 @@ void mesclar(NoB* no, int indice) {
     free(irmao);
 }
 
-// Função para imprimir a estrutura da árvore (para debug)
-void imprimirEstrutura(NoB* no, int nivel) {
-    if (no != NULL) {
-        printf("Nível %d: ", nivel);
-        for (int i = 0; i < no->numChaves; i++) {
-            printf("%d ", no->chaves[i]);
-        }
-        printf("(Folha: %s)\n", no->ehFolha ? "Sim" : "Não");
-        
-        if (!no->ehFolha) {
-            for (int i = 0; i <= no->numChaves; i++) {
-                imprimirEstrutura(no->filhos[i], nivel + 1);
-            }
-        }
-    }
-}
-
-// Função para contar o número total de nós
-int contarNos(NoB* no) {
-    if (no == NULL) return 0;
-    
-    int count = 1;
-    if (!no->ehFolha) {
-        for (int i = 0; i <= no->numChaves; i++)
-            count += contarNos(no->filhos[i]);
-    }
-    return count;
-}
-
 // Função auxiliar para remoção - verifica se um filho tem chaves suficientes
 void preencherFilho(NoB* no, int indice) {
     // Se o filho anterior tem mais que o mínimo de chaves, pegar uma emprestada dele
@@ -436,6 +445,11 @@ void removerAux(NoB* no, int chave) {
 
 // Função principal para remover uma chave da árvore B
 NoB* remover(NoB* raiz, int chave) {
+    if (raiz == NULL) {
+        printf("A árvore está vazia\n");
+        return NULL;
+    }
+    
     removerAux(raiz, chave);
     
     // Se o nó raiz tinha apenas 1 chave e agora está vazio, tornar seu primeiro filho a nova raiz
@@ -447,6 +461,54 @@ NoB* remover(NoB* raiz, int chave) {
         else
             raiz = raiz->filhos[0];
         
+        free(temp);
+    }
+    return raiz;
+}
+
+// Função para imprimir a estrutura da árvore (para debug)
+void imprimirEstrutura(NoB* no, int nivel) {
+    if (no != NULL) {
+        printf("Nível %d: ", nivel);
+        for (int i = 0; i < no->numChaves; i++) {
+            printf("%d ", no->chaves[i]);
+        }
+        printf("(Folha: %s)\n", no->ehFolha ? "Sim" : "Não");
+        
+        if (!no->ehFolha) {
+            for (int i = 0; i <= no->numChaves; i++) {
+                imprimirEstrutura(no->filhos[i], nivel + 1);
+            }
+        }
+    }
+}
+
+// Função para contar o número total de nós
+int contarNos(NoB* no) {
+    if (no == NULL) return 0;
+    
+    int count = 1;
+    if (!no->ehFolha) {
+        for (int i = 0; i <= no->numChaves; i++)
+            count += contarNos(no->filhos[i]);
+    }
+    return count;
+}
+
+// Função para liberar toda a memória da árvore
+void liberarArvore(NoB* raiz) {
+    if (raiz != NULL) {
+        // Se não é folha, liberar recursivamente todos os filhos
+        if (!raiz->ehFolha) {
+            for (int i = 0; i <= raiz->numChaves; i++) {
+                liberarArvore(raiz->filhos[i]);
+            }
+        }
+        // Liberar o nó atual
+        free(raiz);
+    }
+}
+
 // Função principal para demonstrar o funcionamento da árvore B
 int main() {
     NoB* raiz = NULL;
@@ -496,36 +558,71 @@ int main() {
     // Removendo algumas chaves
     printf("Removendo a chave 6:\n");
     raiz = remover(raiz, 6);
-    printf("Árvore após remoção: ");
-    percorrer(raiz);
-    printf("\n\n");
+    if (raiz != NULL) {
+        printf("Árvore após remoção: ");
+        percorrer(raiz);
+        printf("\n\n");
+    }
 
     printf("Removendo a chave 10:\n");
     raiz = remover(raiz, 10);
-    printf("Árvore após remoção: ");
-    percorrer(raiz);
-    printf("\n\n");
+    if (raiz != NULL) {
+        printf("Árvore após remoção: ");
+        percorrer(raiz);
+        printf("\n\n");
 
-    printf("Estrutura final da árvore:\n");
-    imprimirEstrutura(raiz, 0);
+        printf("Estrutura final da árvore:\n");
+        imprimirEstrutura(raiz, 0);
+    }
+
+    // Teste de remoção de chave inexistente
+    printf("\nTentando remover chave inexistente (99):\n");
+    raiz = remover(raiz, 99);
+
+    // Liberar toda a memória antes de terminar
+    printf("\nLiberando memória...\n");
+    liberarArvore(raiz);
+    printf("Memória liberada com sucesso!\n");
 
     return 0;
 }
 ```
 
-## Características das Árvores B
+## Tipos de Operações
 
-### Vantagens:
-- **Otimização para disco:** Minimizam o número de acessos ao disco ao armazenar múltiplas chaves por nó
-- **Balanceamento automático:** Mantêm-se sempre balanceadas, garantindo performance consistente
-- **Eficiência em espaço:** Alta utilização do espaço de armazenamento
-- **Escalabilidade:** Adequadas para grandes volumes de dados
+As árvores B utilizam várias operações especializadas para manter o balanceamento:
 
-### Complexidades:
-- **Busca:** O(log n)
-- **Inserção:** O(log n)
-- **Remoção:** O(log n)
-- **Espaço:** O(n)
+### 1. **Divisão de Nós**
+Quando um nó excede o número máximo de chaves:
+- Dividir o nó em dois nós
+- Promover a chave do meio para o nó pai
+- Redistribuir chaves e filhos adequadamente
+
+### 2. **Empréstimo de Chaves**
+Quando um nó tem poucas chaves durante remoção:
+- Pegar emprestado do irmão anterior (se possível)
+- Pegar emprestado do próximo irmão (se possível)
+- Reorganizar chaves entre os nós
+
+### 3. **Mesclagem de Nós**
+Quando não é possível emprestar chaves:
+- Mesclar o nó com um irmão
+- Mover uma chave do pai para o nó mesclado
+- Reduzir o número de nós na árvore
+
+## Principais Correções Realizadas
+
+1. **Declarações de funções**: Adicionadas todas as declarações necessárias (forward declarations)
+
+2. **Verificações de segurança**: Implementadas verificações NULL adequadas
+
+3. **Estrutura do código**: Corrigidos fechamentos de funções e estrutura geral
+
+4. **Gerenciamento de memória**: Adicionada função `liberarArvore()` para evitar vazamentos de memória
+
+5. **Tratamento de erros**: Melhor tratamento para casos de árvore vazia e alocação de memória
+
+6. **Verificação de alocação**: Adicionada verificação para falha na alocação de memória
 
 ## Operações Fundamentais
 
@@ -541,11 +638,25 @@ A remoção é mais complexa e envolve três casos:
 - **Remoção de nó interno:** Substituir por predecessor ou sucessor
 - **Balanceamento:** Emprestar chaves ou mesclar nós conforme necessário
 
-### 3. Divisão de Nós
-Quando um nó excede o número máximo de chaves:
-- Dividir o nó em dois
-- Promover a chave do meio para o nó pai
-- Se o pai também ficar cheio, propagar a divisão
+### 3. Busca
+A busca é similar à busca em árvore binária, mas com múltiplas comparações por nó:
+- Encontrar a posição adequada no nó atual
+- Se encontrada, retornar o nó
+- Caso contrário, descer para o filho apropriado
+
+## Características das Árvores B
+
+### Vantagens:
+- **Otimização para disco:** Minimizam o número de acessos ao disco ao armazenar múltiplas chaves por nó
+- **Balanceamento automático:** Mantêm-se sempre balanceadas, garantindo performance consistente
+- **Eficiência em espaço:** Alta utilização do espaço de armazenamento
+- **Escalabilidade:** Adequadas para grandes volumes de dados
+
+### Complexidades:
+- **Busca:** O(log n)
+- **Inserção:** O(log n)
+- **Remoção:** O(log n)
+- **Espaço:** O(n)
 
 ## Exemplos de contexto de uso:
 
@@ -577,5 +688,56 @@ Quando um nó excede o número máximo de chaves:
 - Atrasa a divisão de nós redistribuindo chaves entre irmãos
 - Maior utilização de espaço (aproximadamente 2/3 ao invés de 1/2)
 - Menos divisões de nós, melhor performance
+
+## Comparação com Outras Estruturas
+
+| Estrutura | Altura | Acesso Disco | Uso de Memória | Complexidade |
+|-----------|---------|--------------|----------------|--------------|
+| Árvore B | O(log n) | Mínimo | Otimizado | O(log n) |
+| BST | O(n) pior caso | Alto | Baixo | O(log n) médio |
+| AVL | O(log n) | Alto | Médio | O(log n) |
+| Hash Table | O(1) médio | Médio | Alto | O(1) médio |
+
+## Detalhes de Implementação
+
+### Considerações de Performance:
+- **Ordem da árvore**: Ordem maior = menos altura, mas nós maiores
+- **Cache efficiency**: Nós maiores aproveitam melhor a localidade espacial
+- **Disk block size**: Ideal quando nó cabe exatamente em um bloco de disco
+
+### Otimizações Possíveis:
+```c
+// Exemplo de otimização: busca binária dentro do nó
+int buscarPosicao(NoB* no, int chave) {
+    int inicio = 0, fim = no->numChaves - 1;
+    
+    while (inicio <= fim) {
+        int meio = (inicio + fim) / 2;
+        if (no->chaves[meio] == chave)
+            return meio;
+        else if (no->chaves[meio] < chave)
+            inicio = meio + 1;
+        else
+            fim = meio - 1;
+    }
+    return inicio; // Posição de inserção
+}
+```
+
+## Análise de Complexidade Detalhada
+
+### Altura da Árvore:
+Para uma árvore B de ordem m com n chaves:
+- **Altura mínima:** `⌈log_{2t}(n+1)⌉`
+- **Altura máxima:** `⌈log_{⌈m/2⌉}((n+1)/2)⌉`
+
+### Número de Nós:
+- **Mínimo de nós:** `1 + 2×∑(⌈m/2⌉^i) para i=0 até h-1`
+- **Máximo de nós:** `∑(m^i) para i=0 até h`
+
+### Operações de Disco:
+- **Busca:** O(log_m n) acessos ao disco
+- **Inserção:** O(log_m n) acessos + possíveis divisões
+- **Remoção:** O(log_m n) acessos + possíveis mesclagens
 
 A escolha da variação depende dos requisitos específicos da aplicação, como padrão de acesso aos dados e restrições de espaço.
