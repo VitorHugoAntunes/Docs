@@ -1,6 +1,6 @@
 'use client'
 import { Check, Copy } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 interface CustomCodeBlockProps {
   children: React.ReactNode
@@ -9,10 +9,11 @@ interface CustomCodeBlockProps {
 
 export default function CustomCodeBlock({ children, className }: CustomCodeBlockProps) {
   const [copied, setCopied] = useState(false)
+  const codeRef = useRef<HTMLElement>(null)
 
   const handleCopy = async () => {
     try {
-      const text = (children as string) || ''
+      const text = codeRef.current?.textContent || ''
       await navigator.clipboard.writeText(text)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -108,7 +109,7 @@ export default function CustomCodeBlock({ children, className }: CustomCodeBlock
       </div>
 
       <pre className="overflow-x-auto text-sm leading-relaxed p-4 bg-gray-50">
-        <code className={`${className} text-gray-800`} style={{ fontFamily: 'JetBrains Mono, Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace' }}>
+        <code ref={codeRef} className={`${className} text-gray-800`} style={{ fontFamily: 'JetBrains Mono, Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace' }}>
           {children}
         </code>
       </pre>
