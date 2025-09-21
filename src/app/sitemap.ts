@@ -2,6 +2,10 @@ import { getAllDocs, getDocBySlug } from '@/utils/docs'
 import fs from 'fs'
 import { MetadataRoute } from 'next'
 
+function formatDateForSitemap(date: Date) {
+  return date.toISOString().split('.')[0] + '+00:00'
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://localhost:3000'
   const docs = getAllDocs().map(doc => doc.slug)
@@ -21,7 +25,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     return {
       url: `${baseUrl}/docs/${slug}`,
-      lastModified,
+      lastModified: formatDateForSitemap(lastModified),
       changeFrequency: 'weekly' as const,
       priority: doc?.isMainCategory ? 0.9 : 0.7,
     }
@@ -30,13 +34,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: baseUrl,
-      lastModified: new Date(),
+      lastModified: formatDateForSitemap(new Date()),
       changeFrequency: 'daily' as const,
       priority: 1,
     },
     {
       url: `${baseUrl}/docs`,
-      lastModified: new Date(),
+      lastModified: formatDateForSitemap(new Date()),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     },
