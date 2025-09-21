@@ -13,6 +13,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "DocSite - Documentação de Estruturas de Dados",
   description: "Uma plataforma simples e eficiente para acessar anotações e recursos sobre estruturas de dados e algoritmos, organizada para desenvolvedores e estudantes.",
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || '',
+  },
 };
 
 export default function RootLayout({
